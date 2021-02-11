@@ -12,17 +12,26 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import org.jetbrains.anko.alert
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import com.punchthrough.blestarterappandroid.ScanResultAdapter
+import kotlinx.android.synthetic.main.activity_main.*
+import timber.log.Timber
+import kotlinx.android.synthetic.main.activity_main.scan_button
+
+
 
 
 class MainActivity : AppCompatActivity() {
 
     private val ENABLE_BLUETOOTH_REQUEST_CODE = 1 //check if b is on
     private  val LOCATION_PERMISSION_REQUEST_CODE = 2
-    var scan_button = findViewById(R.id.scan_button) as Button
     private val bleScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
 
     private val bluetoothAdapter: BluetoothAdapter by lazy {
@@ -105,19 +114,26 @@ class MainActivity : AppCompatActivity() {
 //prermisions end
 
 // Scanning start,stop
-    private fun startBleScan() {
-        if (!isLocationPermissionGranted) {
-            requestLocationPermission()
-        }
-        else {
-            bleScanner.startScan(null, scanSettings, scanCallback)
-            isScanning = true}
+private fun startBleScan() {
+    if (!isLocationPermissionGranted) {
+        requestLocationPermission()
+    } else {
+        scanResults.clear()
+        scanResultAdapter.notifyDataSetChanged()
+        bleScanner.startScan(null, scanSettings, scanCallback)
+        isScanning = true
     }
+}
 
     private fun stopBleScan() {
         bleScanner.stopScan(scanCallback)
         isScanning = false
     }
+    private var isScanning = false
+        set(value) {
+            field = value
+            runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
+        }
 
     private val scanSettings = ScanSettings.Builder()
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -125,24 +141,61 @@ class MainActivity : AppCompatActivity() {
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val indexQuery = scanResults.indexOfFirst { it.device.address == result.device.address }
+            if (indexQuery != -1) { // A scan result already exists with the same address
+                scanResults[indexQuery] = result
+                scanResultAdapter.notifyItemChanged(indexQuery)
+            } else {
+                with(result.device) {
+                    Log.i("Found BLE device! Name: ${name ?: "Unnamed"}, address: $address","")
+                }
+                scanResults.add(result)
+                scanResultAdapter.notifyItemInserted(scanResults.size - 1)
+            }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            Log.e("onScanFailed: code $errorCode","Error")
+        }
+    }
+
+
+//Scan results
+    private val scanResults = mutableListOf<ScanResult>()
+    private val scanResultAdapter: ScanResultAdapter by lazy {
+        ScanResultAdapter(scanResults) { result ->
+            if (isScanning) {
+                stopBleScan()
+            }
             with(result.device) {
-              //fali log.i za sad
+                Timber.w("Connecting to $address")
+
             }
         }
     }
 
-    private var isScanning = false
-        set(value) {
-            field = value
-            runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
+
+
+    //skrol meni
+    private fun setupRecyclerView() {
+        scan_results_recycler_view.apply {
+            adapter = scanResultAdapter
+            layoutManager = LinearLayoutManager(
+                this@MainActivity,
+                RecyclerView.VERTICAL,
+                false
+            )
+            isNestedScrollingEnabled = false
         }
 
-//Scan results
-    private val scanResults = mutableListOf<ScanResult>()
+        val animator = scan_results_recycler_view.itemAnimator
+        if (animator is SimpleItemAnimator) {
+            animator.supportsChangeAnimations = false
+        }
+    }
 
 
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+   /** override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -153,8 +206,31 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     startBleScan()
                 }
+                setupRecyclerView()
             }
         }
 
+    }**/
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+        scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
+        setupRecyclerView()
     }
+
+
+
+
+
+    /**
+     Scan try
+     **/
+
+
+
+
 }
