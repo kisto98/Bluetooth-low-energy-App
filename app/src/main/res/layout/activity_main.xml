@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="60dp"
-        app:layout_constraintBottom_toTopOf="@+id/scanbutton"
+        app:layout_constraintBottom_toTopOf="@+id/scan_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView"
@@ -34,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="6dp"
-        android:text="Refresh"
+        android:text="Scan"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:layout_editor_absoluteX="180dp" />
 

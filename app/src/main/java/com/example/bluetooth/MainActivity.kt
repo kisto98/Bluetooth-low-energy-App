@@ -2,30 +2,31 @@ package com.example.bluetooth
 
 import android.Manifest
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
+import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import org.jetbrains.anko.alert
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
+
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.row_scan_result.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.toast
 import timber.log.Timber
-import kotlinx.android.synthetic.main.activity_main.scan_button
-
-
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -39,12 +40,7 @@ class MainActivity : AppCompatActivity() {
         bluetoothManager.adapter
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (!bluetoothAdapter.isEnabled) {
-            promptEnableBluetooth()
-        }
-    }
+
 
     private fun promptEnableBluetooth() {
         if (!bluetoothAdapter.isEnabled) {
@@ -52,6 +48,7 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(enableBtIntent, ENABLE_BLUETOOTH_REQUEST_CODE)
         }
     }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -122,6 +119,8 @@ private fun startBleScan() {
         scanResultAdapter.notifyDataSetChanged()
         bleScanner.startScan(null, scanSettings, scanCallback)
         isScanning = true
+
+
     }
 }
 
@@ -159,23 +158,6 @@ private fun startBleScan() {
         }
     }
 
-
-//Scan results
-    private val scanResults = mutableListOf<ScanResult>()
-    private val scanResultAdapter: ScanResultAdapter by lazy {
-        ScanResultAdapter(scanResults) { result ->
-            if (isScanning) {
-                stopBleScan()
-            }
-            with(result.device) {
-                Timber.w("Connecting to $address")
-
-            }
-        }
-    }
-
-
-
     //skrol meni
     private fun setupRecyclerView() {
         scan_results_recycler_view.apply {
@@ -194,23 +176,51 @@ private fun startBleScan() {
         }
     }
 
+    //Scan results
+    private val scanResults = mutableListOf<ScanResult>()
+    private val scanResultAdapter: ScanResultAdapter by lazy {
+        ScanResultAdapter(scanResults) { result ->
+            if (isScanning) {
+                stopBleScan()
+            }
+            with(result.device) {
+                Timber.w("Connecting to $address")
+                connect(this, this@MainActivity)
 
-   /** override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        scan_button.setOnClickListener {
-            scan_button.setOnClickListener {
-                if (isScanning) {
-                    stopBleScan()
-                } else {
-                    startBleScan()
                 }
-                setupRecyclerView()
             }
         }
 
-    }**/
+    //bt connect
+
+    override fun onResume() {
+        super.onResume()
+        ConnectionManager.registerListener(connectionEventListener)
+        if (!bluetoothAdapter.isEnabled) {
+            promptEnableBluetooth()
+        }
+    }
+
+    private val connectionEventListener by lazy {
+        ConnectionEventListener().apply {
+            onConnectionSetupComplete = { gatt ->
+                Intent(this@MainActivity, BleOperationsActivity::class.java).also {
+                    it.putExtra(BluetoothDevice.EXTRA_DEVICE, gatt.device)
+                    startActivity(it)
+                }
+                ConnectionManager.unregisterListener(this)
+            }
+            onDisconnect = {
+                runOnUiThread {
+                    alert {
+                        title = "Disconnected"
+                        message = "Disconnected or unable to connect to device."
+                        positiveButton("OK") {}
+                    }.show()
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
