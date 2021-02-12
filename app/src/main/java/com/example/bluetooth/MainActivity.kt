@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -20,13 +19,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
-
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
-import org.jetbrains.anko.toast
 import timber.log.Timber
-import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -230,6 +225,8 @@ private fun startBleScan() {
         }
         scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
         setupRecyclerView()
+        btdevs.setOnClickListener{ setContentView(R.layout.activity_main);}
+
     }
 
 
