@@ -567,6 +567,6 @@ object ConnectionManager {
             else -> "ERROR: $this"
         }
     }
-
-    private fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
+//promenio sa private
+     fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
 }

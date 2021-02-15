@@ -6,11 +6,14 @@ import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -20,6 +23,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.row_scan_result.view.*
 import org.jetbrains.anko.alert
 import timber.log.Timber
 
@@ -217,6 +221,20 @@ private fun startBleScan() {
         }
     }
 
+
+    private val callback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            val deviceAddress = gatt.device.address
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+
+                }
+
+            }
+
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -227,9 +245,33 @@ private fun startBleScan() {
         setupRecyclerView()
         btdevs.setOnClickListener{ setContentView(R.layout.activity_main);}
 
+        //new one
+
+
+    }
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            val deviceAddress = gatt.device.address
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
+                    // TODO: Store a reference to BluetoothGatt
+
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
+                    gatt.close()
+                }
+            } else {
+                Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                gatt.close()
+            }
+        }
     }
 
+}
 
+///new rec
 
 
 
@@ -240,4 +282,4 @@ private fun startBleScan() {
 
 
 
-}
+
