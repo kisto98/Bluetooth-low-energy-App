@@ -28,7 +28,9 @@ class ScanResultAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.bind(item)
+
     }
+
 
     class ViewHolder(
         private val view: View,
@@ -40,6 +42,7 @@ class ScanResultAdapter(
             view.mac_address.text = result.device.address
             view.signal_strength.text = "${result.rssi} dBm"
             view.setOnClickListener { onClickListener.invoke(result) }
+            view.btn_iscon.setOnClickListener {  onClickListener.invoke(result)  }
         }
     }
 }

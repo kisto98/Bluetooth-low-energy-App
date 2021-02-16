@@ -35,6 +35,8 @@ import java.lang.ref.WeakReference
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlinx.android.synthetic.main.row_scan_result.view.*
+
 
 private const val GATT_MIN_MTU_SIZE = 23
 /** Maximum BLE MTU size as defined in gatt_api.h. */

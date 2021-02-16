@@ -6,14 +6,11 @@ import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -23,7 +20,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.row_scan_result.view.*
+import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
 import timber.log.Timber
 
@@ -133,6 +130,7 @@ private fun startBleScan() {
             runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
         }
 
+
     private val scanSettings = ScanSettings.Builder()
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
         .build()
@@ -143,12 +141,23 @@ private fun startBleScan() {
             if (indexQuery != -1) { // A scan result already exists with the same address
                 scanResults[indexQuery] = result
                 scanResultAdapter.notifyItemChanged(indexQuery)
-            } else {
+            }
+            else {
                 with(result.device) {
                     Log.i("Found BLE device! Name: ${name ?: "Unnamed"}, address: $address","")
                 }
                 scanResults.add(result)
                 scanResultAdapter.notifyItemInserted(scanResults.size - 1)
+
+            }
+        }
+        private fun connectionState(status: Int): String {
+            return when (status) {
+                BluetoothProfile.STATE_CONNECTED -> "Connected"
+                BluetoothProfile.STATE_DISCONNECTED -> "Disconnected"
+                BluetoothProfile.STATE_CONNECTING -> "Connecting"
+                BluetoothProfile.STATE_DISCONNECTING -> "Disconnecting"
+                else -> status.toString()
             }
         }
 
@@ -228,7 +237,7 @@ private fun startBleScan() {
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-
+                        btn_iscon.text= "Disconect"
                 }
 
             }
@@ -243,10 +252,7 @@ private fun startBleScan() {
         }
         scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
         setupRecyclerView()
-        btdevs.setOnClickListener{ setContentView(R.layout.activity_main);}
-
-        //new one
-
+        menu.setOnClickListener{ setContentView(R.layout.activity_main);}
 
     }
     private val gattCallback = object : BluetoothGattCallback() {
@@ -257,7 +263,7 @@ private fun startBleScan() {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
                     // TODO: Store a reference to BluetoothGatt
-
+                    menu.setOnClickListener{ setContentView(R.layout.activity_main);}
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
@@ -270,6 +276,7 @@ private fun startBleScan() {
     }
 
 }
+
 
 ///new rec
 

@@ -22,6 +22,7 @@ import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
@@ -31,11 +32,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import kotlinx.android.synthetic.main.activity_ble_operations.characteristics_recycler_view
-import kotlinx.android.synthetic.main.activity_ble_operations.log_scroll_view
-import kotlinx.android.synthetic.main.activity_ble_operations.log_text_view
-import kotlinx.android.synthetic.main.activity_ble_operations.mtu_field
-import kotlinx.android.synthetic.main.activity_ble_operations.request_mtu_button
+import kotlinx.android.synthetic.main.activity_ble_operations.*
+import kotlinx.android.synthetic.main.activity_ble_operations.menu
+import kotlinx.android.synthetic.main.activity_main.*
+
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.noButton
 import org.jetbrains.anko.selector
@@ -98,6 +98,7 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             hideKeyboard()
         }
+        menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
     }
 
     override fun onDestroy() {
