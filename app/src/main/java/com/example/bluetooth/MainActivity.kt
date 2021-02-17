@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private val ENABLE_BLUETOOTH_REQUEST_CODE = 1 //check if b is on
     private  val LOCATION_PERMISSION_REQUEST_CODE = 2
     private val bleScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
+  //uvodjenje gatt
+    private var connectedDeviceMap: MutableMap<String, BluetoothGatt>? = null
+//
 
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -252,6 +255,7 @@ private fun startBleScan() {
         }
         scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
         setupRecyclerView()
+        connectedDeviceMap = HashMap()
         menu.setOnClickListener{ setContentView(R.layout.activity_main);}
 
     }
@@ -264,7 +268,26 @@ private fun startBleScan() {
                     Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
                     // TODO: Store a reference to BluetoothGatt
                     menu.setOnClickListener{ setContentView(R.layout.activity_main);}
+                    if (!connectedDeviceMap!!.containsKey(deviceAddress)) {
+                        connectedDeviceMap!!.put(deviceAddress, gatt)
+                    }
+                    // Broadcast if needed
+                    Log.i("asd","Attempting to start service discovery:" +
+                            gatt.discoverServices());
+
+
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+
+
+                    if (connectedDeviceMap!!.containsKey(deviceAddress)) {
+                        var bluetoothGatt = connectedDeviceMap!![deviceAddress]
+                        if (bluetoothGatt != null) {
+                            bluetoothGatt.close()
+                            bluetoothGatt = null
+                        }
+                        connectedDeviceMap!!.remove(deviceAddress)
+                    }
+
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
                 }
