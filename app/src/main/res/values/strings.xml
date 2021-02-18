@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Bluetooth</string>
     <string name="ble_playground">BLE Playground</string>
+    <string name="open">Open</string>
+    <string name="close">Colse</string>
 </resources>
 

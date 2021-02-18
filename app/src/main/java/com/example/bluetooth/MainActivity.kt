@@ -11,6 +11,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
+import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -22,6 +25,8 @@ import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
+import org.jetbrains.anko.support.v4.drawerLayout
+import org.jetbrains.anko.toast
 import timber.log.Timber
 
 
@@ -247,18 +252,7 @@ private fun startBleScan() {
 
         }
     }
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
-        scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
-        setupRecyclerView()
-        connectedDeviceMap = HashMap()
-        menu.setOnClickListener{ setContentView(R.layout.activity_main);}
 
-    }
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
@@ -275,9 +269,7 @@ private fun startBleScan() {
                     Log.i("asd","Attempting to start service discovery:" +
                             gatt.discoverServices());
 
-
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-
 
                     if (connectedDeviceMap!!.containsKey(deviceAddress)) {
                         var bluetoothGatt = connectedDeviceMap!![deviceAddress]
@@ -297,11 +289,44 @@ private fun startBleScan() {
             }
         }
     }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+        scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
+        setupRecyclerView()
+        connectedDeviceMap = HashMap()
+        menu.setOnClickListener{ setContentView(R.layout.activity_main);}
+
+        toggle= ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        navView.setNavigationItemSelectedListener {
+            when(it.itemId) {
+                R.id.mItem -> Toast.makeText(applicationContext,"clicked", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
+    }
+
+    //navmenu
+
+    lateinit var toggle:ActionBarDrawerToggle
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item)){
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+
 
 }
 
-
-///new rec
 
 
 
