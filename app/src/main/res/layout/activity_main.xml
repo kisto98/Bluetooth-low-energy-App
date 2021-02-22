@@ -44,7 +44,7 @@
         android:id="@+id/scan_button"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="200dp"
         android:text="Scan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -80,6 +80,15 @@
         app:layout_constraintTop_toBottomOf="@+id/scan_button" />
 
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/condevs_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/scan_button"
+        app:layout_constraintTop_toBottomOf="@id/menu"
+        tools:listitem="@layout/row_connected_devices" />
 </androidx.constraintlayout.widget.ConstraintLayout>
 
 
@@ -96,5 +105,6 @@
         app:menu="@menu/nav_drawer_menu">
 
     </com.google.android.material.navigation.NavigationView>
+
 
 </androidx.drawerlayout.widget.DrawerLayout>
