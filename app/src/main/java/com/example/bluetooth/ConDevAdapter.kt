@@ -3,10 +3,11 @@ package com.example.bluetooth
 import android.bluetooth.*
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat.*
 import androidx.recyclerview.widget.RecyclerView
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.row_connected_devices.view.*
@@ -17,7 +18,8 @@ import org.jetbrains.anko.layoutInflater
 
 class ConDevAdapter(
 
-        private val items: MutableList<BluetoothDevice>?
+        private val items: MutableList<BluetoothDevice>?,
+        private val onClickListener: ((device: BluetoothDevice) -> Unit)
 
 ) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>()
 
@@ -31,7 +33,7 @@ class ConDevAdapter(
                 parent,
                 false
         )
-        return ViewHolder(view)
+        return ViewHolder(view, onClickListener)
     }
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items?.get(position)
@@ -54,12 +56,15 @@ class ConDevAdapter(
 
     class ViewHolder
     constructor(
-            private val view: View
+            private val view: View,
+            private val onClickListener: ((device: BluetoothDevice) -> Unit)
     ): RecyclerView.ViewHolder(view){
 
         fun bind(bluetoothDevice: BluetoothDevice){
             view.con_device_name.text = bluetoothDevice.name
             view.con_mac_address.text= bluetoothDevice.address
+            view.btn_disconnect.setOnClickListener { onClickListener.invoke( bluetoothDevice) }
+            view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
         }
 
     }

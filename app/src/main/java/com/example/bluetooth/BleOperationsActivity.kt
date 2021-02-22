@@ -99,6 +99,7 @@ class BleOperationsActivity : AppCompatActivity() {
             hideKeyboard()
         }
         menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
+        imeuredjaja.text=device.address
     }
 
     override fun onDestroy() {

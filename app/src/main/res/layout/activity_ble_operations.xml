@@ -93,16 +93,16 @@
         <ScrollView
             android:id="@+id/log_scroll_view"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="21dp"
             android:layout_weight="1"
             android:padding="4dp">
 
             <TextView
                 android:id="@+id/log_text_view"
-                android:scrollbars="vertical"
-                android:gravity="bottom"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:gravity="bottom"
+                android:scrollbars="vertical" />
 
         </ScrollView>
 
@@ -114,6 +114,12 @@
             android:text="meni"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/scan_button" />
+
+        <TextView
+            android:id="@+id/imeuredjaja"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
 
     </LinearLayout>
 

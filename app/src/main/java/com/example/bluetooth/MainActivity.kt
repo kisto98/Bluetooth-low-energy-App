@@ -1,6 +1,7 @@
 package com.example.bluetooth
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
@@ -29,9 +30,11 @@ import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header.*
+import kotlinx.android.synthetic.main.row_connected_devices.*
 import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
+import org.jetbrains.anko.startActivity
 import timber.log.Timber
 
 
@@ -176,16 +179,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        private fun connectionState(status: Int): String {
-            return when (status) {
-                BluetoothProfile.STATE_CONNECTED -> "Connected"
-                BluetoothProfile.STATE_DISCONNECTED -> "Disconnected"
-                BluetoothProfile.STATE_CONNECTING -> "Connecting"
-                BluetoothProfile.STATE_DISCONNECTING -> "Disconnecting"
-                else -> status.toString()
-            }
-        }
-
         override fun onScanFailed(errorCode: Int) {
             Log.e("onScanFailed: code $errorCode", "Error")
         }
@@ -209,17 +202,25 @@ class MainActivity : AppCompatActivity() {
         }
            condevs_layout.apply {
                condevs_layout?.layoutManager = LinearLayoutManager(this@MainActivity)
-                 condevs_layout.adapter = ConDevAdapter(somelist)
+
                adapter = conDevAdapter
                //napredak
            }
 
     }
-    private val somelist: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
+    private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
 
     private val conDevAdapter: ConDevAdapter by lazy {
-        ConDevAdapter(somelist)
+        ConDevAdapter(conbledev) {  bluetoothDevice ->
+            Intent(this, BleOperationsActivity::class.java).also {
+                it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+                startActivity(it)
+            }
+            btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+        }
+
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.nav_drawer_menu, menu)
@@ -285,7 +286,7 @@ class MainActivity : AppCompatActivity() {
                     btn_iscon.text = "Disconect"
                     conDevAdapter.notifyDataSetChanged()
                     conDevAdapter.notifyItemInserted(-1)
-                    somelist?.add(1, bluetoothDevice)
+                    conbledev?.add(1, bluetoothDevice)
                 }
             }
         }
@@ -321,8 +322,9 @@ class MainActivity : AppCompatActivity() {
 
                         }
 
-                        somelist?.add(1, bluetoothDevice)
-
+                        conbledev?.add(1, bluetoothDevice)
+                        conDevAdapter.notifyDataSetChanged()
+                        conDevAdapter.notifyItemInserted(-1)
                         ///
 
                     }
@@ -336,12 +338,17 @@ class MainActivity : AppCompatActivity() {
                         }
                         connectedDeviceMap!!.remove(deviceAddress)
                     }
-
+                    conbledev?.remove(bluetoothDevice)
+                    conDevAdapter.notifyDataSetChanged()
+                    conDevAdapter.notifyItemInserted(-1)
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
                 }
             } else {
                 Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                conbledev?.remove(bluetoothDevice)
+                conDevAdapter.notifyDataSetChanged()
+                conDevAdapter.notifyItemInserted(-1)
                 gatt.close()
             }
         }
