@@ -1,13 +1,11 @@
 package com.example.bluetooth
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
-import android.companion.BluetoothDeviceFilter
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,9 +13,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -29,12 +24,10 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.nav_header.*
 import kotlinx.android.synthetic.main.row_connected_devices.*
 import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
-import org.jetbrains.anko.startActivity
 import timber.log.Timber
 
 
@@ -140,6 +133,8 @@ class MainActivity : AppCompatActivity() {
 
             conDevAdapter.notifyDataSetChanged()
             conDevAdapter.notifyItemInserted(-1)
+
+
         }
     }
 
@@ -215,6 +210,7 @@ class MainActivity : AppCompatActivity() {
             Intent(this, BleOperationsActivity::class.java).also {
                 it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
                 startActivity(it)
+
             }
             btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
         }
@@ -224,6 +220,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.nav_drawer_menu, menu)
+        val item = menu!!.findItem(R.layout.row_connected_devices)
         return true
     }
 

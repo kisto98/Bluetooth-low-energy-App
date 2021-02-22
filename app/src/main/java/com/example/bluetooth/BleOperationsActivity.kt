@@ -20,10 +20,12 @@ package com.example.bluetooth
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -32,18 +34,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.example.bluetooth.ConnectionManager.readCharacteristic
 import kotlinx.android.synthetic.main.activity_ble_operations.*
-import kotlinx.android.synthetic.main.activity_ble_operations.menu
-import kotlinx.android.synthetic.main.activity_main.*
-
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.noButton
 import org.jetbrains.anko.selector
 import org.jetbrains.anko.yesButton
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
+import java.util.*
+
 
 class BleOperationsActivity : AppCompatActivity() {
 
@@ -271,3 +270,4 @@ class BleOperationsActivity : AppCompatActivity() {
     private fun String.hexToBytes() =
         this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
 }
+
