@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
@@ -26,7 +27,6 @@ import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header.*
 import kotlinx.android.synthetic.main.row_connected_devices.*
-import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
 import timber.log.Timber
@@ -146,6 +146,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
         }
 
+    val device_name= "Nordic_HRM"
 
     private val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -160,12 +161,15 @@ class MainActivity : AppCompatActivity() {
 
 
             } else {
-                with(result.device) {
-                    Log.i("Found BLE device! Name: ${name ?: "Unnamed"}, address: $address", "")
-                }
-                scanResults.add(result)
-                scanResultAdapter.notifyItemInserted(scanResults.size - 1)
+                //my add
 
+                if (result.device.name==device_name) {
+                    with(result.device) {
+                        Log.i("Found BLE device! Name: ${name ?: "Unnamed"}, address: $address", "")
+                    }
+                    scanResults.add(result)
+                    scanResultAdapter.notifyItemInserted(scanResults.size - 1)
+                }
             }
         }
 
@@ -385,7 +389,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         navView.setNavigationItemSelectedListener {
             when (it.itemId) {
-                R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
+          //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
             }
             true
         }

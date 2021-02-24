@@ -2,17 +2,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <item
-        android:id="@+id/mItem"
-        android:title="Item1"
-        />
-    <item
-        android:id="@+id/mItem2"
-        android:title="Item2"
-        />
-    <item
-        android:id="@+id/mItem3"
-        android:title="Item3"
-        />
-
 </menu>
