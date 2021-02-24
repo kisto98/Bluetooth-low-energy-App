@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.nav_header.*
 import kotlinx.android.synthetic.main.row_connected_devices.*
 import kotlinx.android.synthetic.main.row_scan_result.*
 import org.jetbrains.anko.alert
@@ -185,17 +186,20 @@ class MainActivity : AppCompatActivity() {
             isNestedScrollingEnabled = false
         }
 
+
         val animator = scan_results_recycler_view.itemAnimator
         if (animator is SimpleItemAnimator) {
             animator.supportsChangeAnimations = false
         }
-           condevs_layout.apply {
-               condevs_layout?.layoutManager = LinearLayoutManager(this@MainActivity)
+    }
 
-               adapter = conDevAdapter
-               //napredak
-           }
+    fun menulayout(){
+        condevs_layout.apply {
+            condevs_layout?.layoutManager = LinearLayoutManager(this@MainActivity)
 
+            adapter = conDevAdapter
+            //napredak
+        }
     }
     private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
 
@@ -215,7 +219,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.nav_drawer_menu, menu)
-        val item = menu!!.findItem(R.layout.row_connected_devices)
+
+        menulayout()
+
         return true
     }
 
