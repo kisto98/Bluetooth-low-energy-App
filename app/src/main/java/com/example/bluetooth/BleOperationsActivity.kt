@@ -20,10 +20,10 @@ package com.example.bluetooth
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.content.Intent
+import android.nfc.NfcAdapter.EXTRA_DATA
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -34,17 +34,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.example.bluetooth.ConnectionManager.readCharacteristic
+import com.example.bluetooth.ConnectionManager.BATTERY_SERVICE
+import com.example.bluetooth.ConnectionManager.UUID_HEART_RATE_MEASUREMENT
 import kotlinx.android.synthetic.main.activity_ble_operations.*
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.noButton
-import org.jetbrains.anko.selector
-import org.jetbrains.anko.yesButton
+import org.jetbrains.anko.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 
 class BleOperationsActivity : AppCompatActivity() {
+
 
     private lateinit var device: BluetoothDevice
     private val dateFormatter = SimpleDateFormat("MMM d, HH:mm:ss", Locale.US)
@@ -71,13 +70,17 @@ class BleOperationsActivity : AppCompatActivity() {
             showCharacteristicOptions(characteristic)
         }
     }
+
+
     private var notifyingCharacteristics = mutableListOf<UUID>()
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ConnectionManager.registerListener(connectionEventListener)
         super.onCreate(savedInstanceState)
         device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-            ?: error("Missing BluetoothDevice from MainActivity!")
+                ?: error("Missing BluetoothDevice from MainActivity!")
 
         setContentView(R.layout.activity_ble_operations)
         supportActionBar?.apply {
@@ -98,9 +101,9 @@ class BleOperationsActivity : AppCompatActivity() {
             hideKeyboard()
         }
         menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
-        imeuredjaja.text=device.address
-    }
+        imeuredjaja.text = device.address
 
+    }
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
         ConnectionManager.teardownConnection(device)
@@ -121,9 +124,9 @@ class BleOperationsActivity : AppCompatActivity() {
         characteristics_recycler_view.apply {
             adapter = characteristicAdapter
             layoutManager = LinearLayoutManager(
-                this@BleOperationsActivity,
-                RecyclerView.VERTICAL,
-                false
+                    this@BleOperationsActivity,
+                    RecyclerView.VERTICAL,
+                    false
             )
             isNestedScrollingEnabled = false
         }
@@ -221,20 +224,57 @@ class BleOperationsActivity : AppCompatActivity() {
 
             onCharacteristicChanged = { _, characteristic ->
                 log("Value changed on ${characteristic.uuid}: ${characteristic.value.toHexString()}")
-            }
+                ///
+                when (characteristic.uuid) {
+                    ConnectionManager.BATTERY_SERVICE -> {
+                        val flag = characteristic.properties
+                        val format = when (flag and 0x01) {
+                            0x01 -> {
+                                Log.d("TAG", "Battery level format UINT16.")
+                                BluetoothGattCharacteristic.FORMAT_UINT16
+                            }
+                            else -> {
+                                Log.d("TAG", "Heart rate format UINT8.")
+                                BluetoothGattCharacteristic.FORMAT_UINT8
+                            }
+                        }
+                        var heartRate = characteristic.getIntValue(format, 0)
+                        Log.d("TAG", String.format("Received battery rate: %d", heartRate))
 
-            onNotificationsEnabled = { _, characteristic ->
-                log("Enabled notifications on ${characteristic.uuid}")
-                notifyingCharacteristics.add(characteristic.uuid)
-            }
+                    }
+                    UUID_HEART_RATE_MEASUREMENT -> {
+                        val flag = characteristic.properties
+                        Log.d("TAG", "Heart rate flag: $flag")
+                        var format = -1
+                        // Heart rate bit number format
+                        if (flag and 0x01 != 0) {
+                            format = BluetoothGattCharacteristic.FORMAT_UINT16
+                            Log.d("TAG", "Heart rate format UINT16.")
 
-            onNotificationsDisabled = { _, characteristic ->
-                log("Disabled notifications on ${characteristic.uuid}")
-                notifyingCharacteristics.remove(characteristic.uuid)
+                        } else {
+                            format = BluetoothGattCharacteristic.FORMAT_UINT8
+                            Log.d("TAG", "Heart rate format UINT8.")
+                        }
+                        var heartRate = characteristic.getIntValue(format, 1)
+                        Log.w("TAG", String.format("Received heart rate: %d", heartRate))
+                        heartRate.toDouble()
+                        hsrate.text = heartRate.toString()
+                        ///
+                    }
+                }
+
+                onNotificationsEnabled = { _, characteristic ->
+                    log("Enabled notifications on ${characteristic.uuid}")
+                    notifyingCharacteristics.add(characteristic.uuid)
+                }
+
+                onNotificationsDisabled = { _, characteristic ->
+                    log("Disabled notifications on ${characteristic.uuid}")
+                    notifyingCharacteristics.remove(characteristic.uuid)
+                }
             }
         }
     }
-
     private enum class CharacteristicProperty {
         Readable,
         Writable,
@@ -268,6 +308,13 @@ class BleOperationsActivity : AppCompatActivity() {
     }
 
     private fun String.hexToBytes() =
-        this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
+            this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
 }
+////
+
+
+
+//var characteristic: BluetoothGattCharacteristic = bluetoothGatt.getService(HEART_RATE_SERVICE_UUID).getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
+//lateinit var bluetoothGatt: BluetoothGatt
+
 

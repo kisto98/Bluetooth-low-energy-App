@@ -17,13 +17,8 @@
 package com.example.bluetooth
 
 
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothGattService
-import android.bluetooth.BluetoothProfile
+import android.app.PendingIntent.getService
+import android.bluetooth.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -32,10 +27,9 @@ import android.os.Handler
 import android.os.Looper
 import timber.log.Timber
 import java.lang.ref.WeakReference
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import kotlinx.android.synthetic.main.row_scan_result.view.*
 
 
 private const val GATT_MIN_MTU_SIZE = 23
@@ -371,6 +365,17 @@ object ConnectionManager {
                     printGattTable()
                     requestMtu(device, GATT_MAX_MTU_SIZE)
                     listeners.forEach { it.get()?.onConnectionSetupComplete?.invoke(this) }
+
+                    ////my add
+            /**        val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
+                            .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
+                    gatt.setCharacteristicNotification(characteristic, true)
+
+
+                    val descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
+                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(descriptor)
+              */      ////
                 } else {
                     Timber.e("Service discovery failed due to status $status")
                     teardownConnection(gatt.device)
@@ -448,7 +453,11 @@ object ConnectionManager {
             with(characteristic) {
                 Timber.i("Characteristic $uuid changed | value: ${value.toHexString()}")
                 listeners.forEach { it.get()?.onCharacteristicChanged?.invoke(gatt.device, this) }
+
             }
+            ///my add
+
+         //   characteristic.getValue()
         }
 
         override fun onDescriptorRead(
@@ -482,6 +491,13 @@ object ConnectionManager {
             status: Int
         ) {
             with(descriptor) {
+            ///my add
+     /**           val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
+                        .getCharacteristic(HEART_RATE_CONTROL_POINT_CHAR_UUID)
+                characteristic.value = byteArrayOf(1, 1)
+                gatt.writeCharacteristic(characteristic).toString()
+*/
+                ///
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
                         Timber.i("Wrote to descriptor $uuid | value: ${value.toHexString()}")
@@ -571,4 +587,63 @@ object ConnectionManager {
     }
 //promenio sa private
      fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
+    fun convertFromInteger(i: Int): UUID? {
+        val MSB = 0x0000000000001000L
+        val LSB = -0x7fffff7fa064cb05L
+        val value = (i and (-0x1.toLong()).toInt()).toLong()
+        return UUID(MSB or (value shl 32), LSB)
+    }
+
+    var BATTERY_LEVEL = convertFromInteger(0x2A19)
+    //var BATTERY_SERVICE = convertFromInteger(0x180F)
+    var BATTERY_SERVICE = convertFromInteger(0x2A19)
+    var CLIENT_CHARACTERISTIC_CONFIG_UUID = convertFromInteger(0x2902)
+    var HEART_RATE_CONTROL_POINT_CHAR_UUID = convertFromInteger(0x2A39)
+    var HEART_RATE_SERVICE_UUID = convertFromInteger(0x180D)
+  //  var HEART_RATE_MEASUREMENT_CHAR_UUID = convertFromInteger(0x2A37)
+    var UUID_HEART_RATE_MEASUREMENT = convertFromInteger(0x2A37)
+
+  /**  private fun broadcastUpdate(action: String) {
+        val intent = Intent(action)
+        sendBroadcast(intent)
+    }
+
+    private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
+        val intent = Intent(action)
+
+        // This is special handling for the Heart Rate Measurement profile. Data
+        // parsing is carried out as per profile specifications.
+        when (characteristic.uuid) {
+            UUID_HEART_RATE_MEASUREMENT -> {
+                val flag = characteristic.properties
+                val format = when (flag and 0x01) {
+                    0x01 -> {
+                        Log.d(TAG, "Heart rate format UINT16.")
+                        BluetoothGattCharacteristic.FORMAT_UINT16
+                    }
+                    else -> {
+                        Log.d(TAG, "Heart rate format UINT8.")
+                        BluetoothGattCharacteristic.FORMAT_UINT8
+                    }
+                }
+                val heartRate = characteristic.getIntValue(format, 1)
+                Log.d(TAG, String.format("Received heart rate: %d", heartRate))
+                intent.putExtra(EXTRA_DATA, (heartRate).toString())
+            }
+            else -> {
+                // For all other profiles, writes the data formatted in HEX.
+                val data: ByteArray? = characteristic.value
+                if (data?.isNotEmpty() == true) {
+                    val hexString: String = data.joinToString(separator = " ") {
+                        String.format("%02X", it)
+                    }
+                    intent.putExtra(EXTRA_DATA, "$data\n$hexString")
+                }
+            }
+
+        }
+        sendBroadcast(intent)
+    }
+*/
 }
+

@@ -349,7 +349,9 @@ class MainActivity : AppCompatActivity() {
                 gatt.close()
             }
         }
+
     }
+
     //navmenu
 
     lateinit var toggle: ActionBarDrawerToggle

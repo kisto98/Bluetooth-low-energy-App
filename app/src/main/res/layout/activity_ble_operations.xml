@@ -116,6 +116,12 @@
             app:layout_constraintTop_toBottomOf="@+id/scan_button" />
 
         <TextView
+            android:id="@+id/hsrate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
+
+        <TextView
             android:id="@+id/imeuredjaja"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
