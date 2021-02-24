@@ -41,6 +41,7 @@ class ConDevAdapter(
             holder.bind(item)
         }
 
+
     }
 
 
@@ -63,7 +64,7 @@ class ConDevAdapter(
         fun bind(bluetoothDevice: BluetoothDevice){
             view.con_device_name.text = bluetoothDevice.name
             view.con_mac_address.text= bluetoothDevice.address
-            view.btn_disconnect.setOnClickListener { onClickListener.invoke( bluetoothDevice) }
+            view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice)  }
             view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
         }
 

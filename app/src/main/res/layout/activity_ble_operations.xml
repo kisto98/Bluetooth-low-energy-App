@@ -119,13 +119,19 @@
             android:id="@+id/hsrate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TextView" />
+            android:text="Heart sensor rate" />
+
+        <TextView
+            android:id="@+id/btlvl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Battery level" />
 
         <TextView
             android:id="@+id/imeuredjaja"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TextView" />
+            android:text="Device adress" />
 
     </LinearLayout>
 

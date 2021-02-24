@@ -131,10 +131,6 @@ class MainActivity : AppCompatActivity() {
             bleScanner.startScan(null, scanSettings, scanCallback)
             isScanning = true
 
-            conDevAdapter.notifyDataSetChanged()
-            conDevAdapter.notifyItemInserted(-1)
-
-
         }
     }
 
@@ -168,8 +164,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 scanResults.add(result)
                 scanResultAdapter.notifyItemInserted(scanResults.size - 1)
-                conDevAdapter.notifyDataSetChanged()
-                conDevAdapter.notifyItemInserted(+1)
 
             }
         }
@@ -213,6 +207,7 @@ class MainActivity : AppCompatActivity() {
 
             }
             btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+         //   btn_disconnect.setOnClickListener {  }
         }
 
     }
@@ -274,7 +269,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private val callback = object : BluetoothGattCallback() {
+/**    private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
 
@@ -288,7 +283,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+*/
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
@@ -306,9 +301,10 @@ class MainActivity : AppCompatActivity() {
                             gatt.discoverServices());
 
                     //
+                          conbledev?.add(1, bluetoothDevice)
+                        conDevAdapter.notifyItemInserted(+1)
+                        conDevAdapter.notifyDataSetChanged()
 
-                          conDevAdapter.notifyDataSetChanged()
-                          conDevAdapter.notifyItemInserted(-1)
                     ///get connected
                     if (pairedDevices.size > 0) {
                         for (d in pairedDevices) {
@@ -320,8 +316,8 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         conbledev?.add(1, bluetoothDevice)
-                        conDevAdapter.notifyDataSetChanged()
                         conDevAdapter.notifyItemInserted(-1)
+                        conDevAdapter.notifyDataSetChanged()
                         ///
 
                     }
@@ -336,16 +332,19 @@ class MainActivity : AppCompatActivity() {
                         connectedDeviceMap!!.remove(deviceAddress)
                     }
                     conbledev?.remove(bluetoothDevice)
+                    conDevAdapter.notifyItemRemoved(-1)
                     conDevAdapter.notifyDataSetChanged()
-                    conDevAdapter.notifyItemInserted(-1)
+
+
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
                 }
             } else {
                 Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
                 conbledev?.remove(bluetoothDevice)
+                conDevAdapter.notifyItemRemoved(-1)
                 conDevAdapter.notifyDataSetChanged()
-                conDevAdapter.notifyItemInserted(-1)
+
                 gatt.close()
             }
         }

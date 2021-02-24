@@ -103,6 +103,7 @@ class BleOperationsActivity : AppCompatActivity() {
         menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
         imeuredjaja.text = device.address
 
+
     }
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
@@ -234,13 +235,13 @@ class BleOperationsActivity : AppCompatActivity() {
                                 BluetoothGattCharacteristic.FORMAT_UINT16
                             }
                             else -> {
-                                Log.d("TAG", "Heart rate format UINT8.")
+                                Log.d("TAG", "Battery level format UINT8.")
                                 BluetoothGattCharacteristic.FORMAT_UINT8
                             }
                         }
-                        var heartRate = characteristic.getIntValue(format, 0)
-                        Log.d("TAG", String.format("Received battery rate: %d", heartRate))
-
+                        var batteryRate = characteristic.getIntValue(format, 0)
+                        Log.d("TAG", String.format("Recived battery level rate: %d", batteryRate))
+                        btlvl.text = "Battery level  " + batteryRate.toString()
                     }
                     UUID_HEART_RATE_MEASUREMENT -> {
                         val flag = characteristic.properties
@@ -258,7 +259,7 @@ class BleOperationsActivity : AppCompatActivity() {
                         var heartRate = characteristic.getIntValue(format, 1)
                         Log.w("TAG", String.format("Received heart rate: %d", heartRate))
                         heartRate.toDouble()
-                        hsrate.text = heartRate.toString()
+                        hsrate.text = "Heart rate sensor  " + heartRate.toString()
                         ///
                     }
                 }

@@ -86,6 +86,7 @@ object ConnectionManager {
     fun teardownConnection(device: BluetoothDevice) {
         if (device.isConnected()) {
             enqueueOperation(Disconnect(device))
+
         } else {
             Timber.e("Not connected to ${device.address}, cannot teardown connection!")
         }
