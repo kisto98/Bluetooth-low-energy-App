@@ -21,22 +21,31 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
 import android.nfc.NfcAdapter.EXTRA_DATA
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.BATTERY_SERVICE
 import com.example.bluetooth.ConnectionManager.UUID_HEART_RATE_MEASUREMENT
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_ble_operations.*
+import kotlinx.android.synthetic.main.activity_ble_operations.drawerLayout
+import kotlinx.android.synthetic.main.activity_ble_operations.navView
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.nav_header.*
+import kotlinx.android.synthetic.main.row_connected_devices.*
 import org.jetbrains.anko.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,8 +53,7 @@ import java.util.*
 
 class BleOperationsActivity : AppCompatActivity() {
 
-
-    private lateinit var device: BluetoothDevice
+    lateinit var device: BluetoothDevice
     private val dateFormatter = SimpleDateFormat("MMM d, HH:mm:ss", Locale.US)
     private val characteristics by lazy {
         ConnectionManager.servicesOnDevice(device)?.flatMap { service ->
@@ -65,11 +73,7 @@ class BleOperationsActivity : AppCompatActivity() {
             }.toList()
         }.toMap()
     }
-    private val characteristicAdapter: CharacteristicAdapter by lazy {
-        CharacteristicAdapter(characteristics) { characteristic ->
-            showCharacteristicOptions(characteristic)
-        }
-    }
+
 
 
     private var notifyingCharacteristics = mutableListOf<UUID>()
@@ -81,37 +85,103 @@ class BleOperationsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 ?: error("Missing BluetoothDevice from MainActivity!")
-
         setContentView(R.layout.activity_ble_operations)
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
             title = getString(R.string.ble_playground)
         }
-        setupRecyclerView()
-        request_mtu_button.setOnClickListener {
-            if (mtu_field.text.isNotEmpty() && mtu_field.text.isNotBlank()) {
-                mtu_field.text.toString().toIntOrNull()?.let { mtu ->
-                    log("Requesting for MTU value of $mtu")
-                    ConnectionManager.requestMtu(device, mtu)
-                } ?: log("Invalid MTU value: ${mtu_field.text}")
-            } else {
-                log("Please specify a numeric value for desired ATT MTU (23-517)")
-            }
-            hideKeyboard()
-        }
-        menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
+
+
+     //   menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
         imeuredjaja.text = device.address
+   //bottom menu
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigationView.selectedItemId = R.id.metrics
+        bottomNavigationView.setOnNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.main -> {
+                    Intent(this, MainActivity::class.java).also {
+                        startActivity(it)
+                    }
+                    overridePendingTransition(0, 0)
+                    return@setOnNavigationItemSelectedListener true
 
+                }
+                R.id.metrics -> {
+                    return@setOnNavigationItemSelectedListener false
+                }
+                R.id.settings -> {
+                    Intent(this, SettingsActivity::class.java).also {
+                        startActivity(it)
+                    }
+                    overridePendingTransition(0, 0)
+                    return@setOnNavigationItemSelectedListener true
+                }
+            }
+            false
+        }
 
+        //top menu
+        toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        navView.setNavigationItemSelectedListener {
+            when (it.itemId) {
+                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+        ///
     }
+
+    //navmenu
+
+    lateinit var toggle: ActionBarDrawerToggle
+
+    //
+    fun menulayout(){
+        condevs_layout.apply {
+            condevs_layout?.layoutManager = LinearLayoutManager(this@BleOperationsActivity)
+            adapter = conDevAdapter
+        }
+    }
+    private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
+
+    private val conDevAdapter: ConDevAdapter by lazy {
+        ConDevAdapter(conbledev) {  bluetoothDevice ->
+            Intent(this, BleOperationsActivity::class.java).also {
+                it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+                startActivity(it)
+
+            }
+            btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+            radioButton.setOnClickListener{ radioButton.isChecked }
+
+        }
+    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item)) {
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+    ///end menu
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.nav_drawer_menu, menu)
+        menulayout()
+        return true
+    }
+
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
         ConnectionManager.teardownConnection(device)
         super.onDestroy()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+ /**   override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
                 onBackPressed()
@@ -120,84 +190,9 @@ class BleOperationsActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
+*/
 
-    private fun setupRecyclerView() {
-        characteristics_recycler_view.apply {
-            adapter = characteristicAdapter
-            layoutManager = LinearLayoutManager(
-                    this@BleOperationsActivity,
-                    RecyclerView.VERTICAL,
-                    false
-            )
-            isNestedScrollingEnabled = false
-        }
 
-        val animator = characteristics_recycler_view.itemAnimator
-        if (animator is SimpleItemAnimator) {
-            animator.supportsChangeAnimations = false
-        }
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun log(message: String) {
-        val formattedMessage = String.format("%s: %s", dateFormatter.format(Date()), message)
-        runOnUiThread {
-            val currentLogText = if (log_text_view.text.isEmpty()) {
-                "Beginning of log."
-            } else {
-                log_text_view.text
-            }
-            log_text_view.text = "$currentLogText\n$formattedMessage"
-            log_scroll_view.post { log_scroll_view.fullScroll(View.FOCUS_DOWN) }
-        }
-    }
-
-    private fun showCharacteristicOptions(characteristic: BluetoothGattCharacteristic) {
-        characteristicProperties[characteristic]?.let { properties ->
-            selector("Select an action to perform", properties.map { it.action }) { _, i ->
-                when (properties[i]) {
-                    CharacteristicProperty.Readable -> {
-                        log("Reading from ${characteristic.uuid}")
-                        ConnectionManager.readCharacteristic(device, characteristic)
-                    }
-                    CharacteristicProperty.Writable, CharacteristicProperty.WritableWithoutResponse -> {
-                        showWritePayloadDialog(characteristic)
-                    }
-                    CharacteristicProperty.Notifiable, CharacteristicProperty.Indicatable -> {
-                        if (notifyingCharacteristics.contains(characteristic.uuid)) {
-                            log("Disabling notifications on ${characteristic.uuid}")
-                            ConnectionManager.disableNotifications(device, characteristic)
-                        } else {
-                            log("Enabling notifications on ${characteristic.uuid}")
-                            ConnectionManager.enableNotifications(device, characteristic)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    private fun showWritePayloadDialog(characteristic: BluetoothGattCharacteristic) {
-        val hexField = layoutInflater.inflate(R.layout.edittext_hex_payload, null) as EditText
-        alert {
-            customView = hexField
-            isCancelable = false
-            yesButton {
-                with(hexField.text.toString()) {
-                    if (isNotBlank() && isNotEmpty()) {
-                        val bytes = hexToBytes()
-                        log("Writing to ${characteristic.uuid}: ${bytes.toHexString()}")
-                        ConnectionManager.writeCharacteristic(device, characteristic, bytes)
-                    } else {
-                        log("Please enter a hex payload to write to ${characteristic.uuid}")
-                    }
-                }
-            }
-            noButton {}
-        }.show()
-        hexField.showKeyboard()
-    }
 
     private val connectionEventListener by lazy {
         ConnectionEventListener().apply {
@@ -212,19 +207,19 @@ class BleOperationsActivity : AppCompatActivity() {
             }
 
             onCharacteristicRead = { _, characteristic ->
-                log("Read from ${characteristic.uuid}: ${characteristic.value.toHexString()}")
+
             }
 
             onCharacteristicWrite = { _, characteristic ->
-                log("Wrote to ${characteristic.uuid}")
+
             }
 
             onMtuChanged = { _, mtu ->
-                log("MTU updated to $mtu")
+
             }
 
             onCharacteristicChanged = { _, characteristic ->
-                log("Value changed on ${characteristic.uuid}: ${characteristic.value.toHexString()}")
+
                 ///
                 when (characteristic.uuid) {
                     ConnectionManager.BATTERY_SERVICE -> {
@@ -239,7 +234,7 @@ class BleOperationsActivity : AppCompatActivity() {
                                 BluetoothGattCharacteristic.FORMAT_UINT8
                             }
                         }
-                        var batteryRate = characteristic.getIntValue(format, 0)
+                        val batteryRate = characteristic.getIntValue(format, 0)
                         Log.d("TAG", String.format("Recived battery level rate: %d", batteryRate))
                         btlvl.text = "Battery level  " + batteryRate.toString()
                     }
@@ -256,21 +251,22 @@ class BleOperationsActivity : AppCompatActivity() {
                             format = BluetoothGattCharacteristic.FORMAT_UINT8
                             Log.d("TAG", "Heart rate format UINT8.")
                         }
-                        var heartRate = characteristic.getIntValue(format, 1)
+                        val heartRate = characteristic.getIntValue(format, 1)
                         Log.w("TAG", String.format("Received heart rate: %d", heartRate))
                         heartRate.toDouble()
                         hsrate.text = "Heart rate sensor  " + heartRate.toString()
+                        devicename.text= "Device name: "+ device.name
                         ///
                     }
                 }
 
                 onNotificationsEnabled = { _, characteristic ->
-                    log("Enabled notifications on ${characteristic.uuid}")
+
                     notifyingCharacteristics.add(characteristic.uuid)
                 }
 
                 onNotificationsDisabled = { _, characteristic ->
-                    log("Disabled notifications on ${characteristic.uuid}")
+
                     notifyingCharacteristics.remove(characteristic.uuid)
                 }
             }

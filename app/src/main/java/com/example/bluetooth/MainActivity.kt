@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
@@ -14,7 +13,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -23,12 +21,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header.*
 import kotlinx.android.synthetic.main.row_connected_devices.*
+import kotlinx.android.synthetic.main.row_connected_devices.view.*
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
+import org.jetbrains.anko.toast
 import timber.log.Timber
 
 
@@ -38,24 +39,19 @@ class MainActivity : AppCompatActivity() {
     private val LOCATION_PERMISSION_REQUEST_CODE = 2
     private val bleScanner by lazy { bluetoothAdapter.bluetoothLeScanner }
 
-
-    //uvodjenje gatt
     private var connectedDeviceMap: MutableMap<String, BluetoothGatt>? = null
-
-    //
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
-    private val bluetoothDevice: BluetoothDevice by lazy { bluetoothDevice }
 
+    private val bluetoothDevice: BluetoothDevice by lazy { bluetoothDevice }
     private fun promptEnableBluetooth() {
         if (!bluetoothAdapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, ENABLE_BLUETOOTH_REQUEST_CODE)
         }
     }
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -146,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
         }
 
-    val device_name= "Nordic_HRM"
+    val device_name = "Nordic_HRM"
 
     private val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -163,7 +159,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 //my add
 
-                if (result.device.name==device_name) {
+                if (result.device.name == device_name) {
                     with(result.device) {
                         Log.i("Found BLE device! Name: ${name ?: "Unnamed"}, address: $address", "")
                     }
@@ -197,27 +193,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun menulayout(){
-        condevs_layout.apply {
-            condevs_layout?.layoutManager = LinearLayoutManager(this@MainActivity)
 
-            adapter = conDevAdapter
-            //napredak
-        }
-    }
     private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
 
     private val conDevAdapter: ConDevAdapter by lazy {
-        ConDevAdapter(conbledev) {  bluetoothDevice ->
+        ConDevAdapter(conbledev) { bluetoothDevice ->
             Intent(this, BleOperationsActivity::class.java).also {
                 it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
                 startActivity(it)
 
             }
             btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
-         //   btn_disconnect.setOnClickListener {  }
-        }
+            radioButton.setOnClickListener { radioButton.isChecked }
 
+        }
+    }
+
+    fun menulayout() {
+        condevs_layout.apply {
+            condevs_layout?.layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = conDevAdapter
+
+
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -278,22 +276,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-/**    private val callback = object : BluetoothGattCallback() {
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            val deviceAddress = gatt.device.address
-
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    btn_iscon.text = "Disconect"
-                    conDevAdapter.notifyDataSetChanged()
-                    conDevAdapter.notifyItemInserted(-1)
-                    conbledev?.add(1, bluetoothDevice)
-                }
-            }
-        }
-    }
-*/
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
@@ -302,7 +284,7 @@ class MainActivity : AppCompatActivity() {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
                     // TODO: Store a reference to BluetoothGatt
-                    menu.setOnClickListener { setContentView(R.layout.activity_main); }
+
                     if (!connectedDeviceMap!!.containsKey(deviceAddress)) {
                         connectedDeviceMap!!.put(deviceAddress, gatt)
                     }
@@ -311,9 +293,9 @@ class MainActivity : AppCompatActivity() {
                             gatt.discoverServices());
 
                     //
-                          conbledev?.add(1, bluetoothDevice)
-                        conDevAdapter.notifyItemInserted(+1)
-                        conDevAdapter.notifyDataSetChanged()
+                    conbledev?.add(1, bluetoothDevice)
+                    conDevAdapter.notifyItemInserted(+1)
+                    conDevAdapter.notifyDataSetChanged()
 
                     ///get connected
                     if (pairedDevices.size > 0) {
@@ -360,9 +342,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-
     //navmenu
-
     lateinit var toggle: ActionBarDrawerToggle
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
@@ -370,7 +350,6 @@ class MainActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -381,28 +360,58 @@ class MainActivity : AppCompatActivity() {
         scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
         setupRecyclerView()
         connectedDeviceMap = HashMap()
-        menu.setOnClickListener { setContentView(R.layout.activity_main); }
-//navmenu
+
+//navtop
         toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         navView.setNavigationItemSelectedListener {
             when (it.itemId) {
-          //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
+                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
             }
             true
         }
+//navbottom
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigationView.selectedItemId = R.id.main
+        bottomNavigationView.setOnNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.main -> {
+                    overridePendingTransition(0, 0)
+                    return@setOnNavigationItemSelectedListener false
+
+                }
+                R.id.metrics -> {
+
+                    ConDevAdapter(conbledev) { bluetoothDevice ->
+                        Intent(this@MainActivity, BleOperationsActivity::class.java).also {
+                            it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
+                            startActivity(it)
+                        }
+                    }
+                    overridePendingTransition(0, 0)
+                    return@setOnNavigationItemSelectedListener true
+                }
+                R.id.settings -> {
+                    Intent(this@MainActivity, SettingsActivity::class.java).also {
+                        startActivity(it)
+                    }
+                    overridePendingTransition(0, 0)
+                    return@setOnNavigationItemSelectedListener true
+                }
+            }
+            false
+        }
 
     }
+    //lateinit var device: BluetoothDevice
 }
 
 
-
-
 /**
-     Scan try
-     **/
+Scan try
+ **/
 
 
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.bluetooth
+package com.example.bluetooth.ble
 
 
 import android.bluetooth.BluetoothDevice

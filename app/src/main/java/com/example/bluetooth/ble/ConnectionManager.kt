@@ -17,7 +17,6 @@
 package com.example.bluetooth
 
 
-import android.app.PendingIntent.getService
 import android.bluetooth.*
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -25,6 +24,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import com.example.bluetooth.ble.*
+import kotlinx.android.synthetic.main.activity_ble_operations.*
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.*
@@ -33,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 
 private const val GATT_MIN_MTU_SIZE = 23
+
 /** Maximum BLE MTU size as defined in gatt_api.h. */
 private const val GATT_MAX_MTU_SIZE = 517
 
@@ -45,17 +48,19 @@ object ConnectionManager {
     private var pendingOperation: BleOperationType? = null
 
     fun servicesOnDevice(device: BluetoothDevice): List<BluetoothGattService>? =
-        deviceGattMap[device]?.services
+            deviceGattMap[device]?.services
 
     fun listenToBondStateChanges(context: Context) {
         context.applicationContext.registerReceiver(
-            broadcastReceiver,
-            IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                broadcastReceiver,
+                IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         )
     }
 
     fun registerListener(listener: ConnectionEventListener) {
-        if (listeners.map { it.get() }.contains(listener)) { return }
+        if (listeners.map { it.get() }.contains(listener)) {
+            return
+        }
         listeners.add(WeakReference(listener))
         listeners = listeners.filter { it.get() != null }.toMutableSet()
         Timber.d("Added listener $listener, ${listeners.size} listeners total")
@@ -103,9 +108,9 @@ object ConnectionManager {
     }
 
     fun writeCharacteristic(
-        device: BluetoothDevice,
-        characteristic: BluetoothGattCharacteristic,
-        payload: ByteArray
+            device: BluetoothDevice,
+            characteristic: BluetoothGattCharacteristic,
+            payload: ByteArray
     ) {
         val writeType = when {
             characteristic.isWritable() -> BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -135,9 +140,9 @@ object ConnectionManager {
     }
 
     fun writeDescriptor(
-        device: BluetoothDevice,
-        descriptor: BluetoothGattDescriptor,
-        payload: ByteArray
+            device: BluetoothDevice,
+            descriptor: BluetoothGattDescriptor,
+            payload: ByteArray
     ) {
         if (device.isConnected() && (descriptor.isWritable() || descriptor.isCccd())) {
             enqueueOperation(DescriptorWrite(device, descriptor.uuid, payload))
@@ -150,7 +155,7 @@ object ConnectionManager {
 
     fun enableNotifications(device: BluetoothDevice, characteristic: BluetoothGattCharacteristic) {
         if (device.isConnected() &&
-            (characteristic.isIndicatable() || characteristic.isNotifiable())
+                (characteristic.isIndicatable() || characteristic.isNotifiable())
         ) {
             enqueueOperation(EnableNotifications(device, characteristic.uuid))
         } else if (!device.isConnected()) {
@@ -162,7 +167,7 @@ object ConnectionManager {
 
     fun disableNotifications(device: BluetoothDevice, characteristic: BluetoothGattCharacteristic) {
         if (device.isConnected() &&
-            (characteristic.isIndicatable() || characteristic.isNotifiable())
+                (characteristic.isIndicatable() || characteristic.isNotifiable())
         ) {
             enqueueOperation(DisableNotifications(device, characteristic.uuid))
         } else if (!device.isConnected()) {
@@ -227,11 +232,11 @@ object ConnectionManager {
 
         // Check BluetoothGatt availability for other operations
         val gatt = deviceGattMap[operation.device]
-            ?: this@ConnectionManager.run {
-                Timber.e("Not connected to ${operation.device.address}! Aborting $operation operation.")
-                signalEndOfOperation()
-                return
-            }
+                ?: this@ConnectionManager.run {
+                    Timber.e("Not connected to ${operation.device.address}! Aborting $operation operation.")
+                    signalEndOfOperation()
+                    return
+                }
 
         // TODO: Make sure each operation ultimately leads to signalEndOfOperation()
         // TODO: Refactor this into an BleOperationType abstract or extension function
@@ -368,15 +373,32 @@ object ConnectionManager {
                     listeners.forEach { it.get()?.onConnectionSetupComplete?.invoke(this) }
 
                     ////my add
-            /**        val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
+
+
+                    val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
                             .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
-                    gatt.setCharacteristicNotification(characteristic, true)
+                 //   gatt.setCharacteristicNotification(characteristic2, true)
+
+                //    val descriptor2 = characteristic2.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
+                //    descriptor2.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                //    gatt.writeDescriptor(descriptor2)
 
 
-                    val descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
-                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                    gatt.writeDescriptor(descriptor)
-              */      ////
+                    val characteristic = gatt.getService(BATTERY_SERVICE2)
+                            .getCharacteristic(BATTERY_LEVEL)
+               //     gatt.setCharacteristicNotification(characteristic, true)
+
+              //      val descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
+              //      descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+              //      gatt.writeDescriptor(descriptor)
+
+
+                    //turn on/off for notifications
+                    enableNotifications(device, characteristic)
+                    enableNotifications(device, characteristic2)
+
+
+
                 } else {
                     Timber.e("Service discovery failed due to status $status")
                     teardownConnection(gatt.device)
@@ -398,9 +420,9 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                status: Int
         ) {
             with(characteristic) {
                 when (status) {
@@ -423,9 +445,9 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicWrite(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                status: Int
         ) {
             with(characteristic) {
                 when (status) {
@@ -448,8 +470,8 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicChanged(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic
         ) {
             with(characteristic) {
                 Timber.i("Characteristic $uuid changed | value: ${value.toHexString()}")
@@ -457,14 +479,14 @@ object ConnectionManager {
 
             }
             ///my add
-
-         //   characteristic.getValue()
+            //characteristic.getValue()
         }
 
+
         override fun onDescriptorRead(
-            gatt: BluetoothGatt,
-            descriptor: BluetoothGattDescriptor,
-            status: Int
+                gatt: BluetoothGatt,
+                descriptor: BluetoothGattDescriptor,
+                status: Int
         ) {
             with(descriptor) {
                 when (status) {
@@ -487,17 +509,17 @@ object ConnectionManager {
         }
 
         override fun onDescriptorWrite(
-            gatt: BluetoothGatt,
-            descriptor: BluetoothGattDescriptor,
-            status: Int
+                gatt: BluetoothGatt,
+                descriptor: BluetoothGattDescriptor,
+                status: Int
         ) {
             with(descriptor) {
-            ///my add
-     /**           val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
-                        .getCharacteristic(HEART_RATE_CONTROL_POINT_CHAR_UUID)
+                ///my add
+                /**           val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
+                .getCharacteristic(HEART_RATE_CONTROL_POINT_CHAR_UUID)
                 characteristic.value = byteArrayOf(1, 1)
                 gatt.writeCharacteristic(characteristic).toString()
-*/
+                 */
                 ///
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
@@ -519,7 +541,7 @@ object ConnectionManager {
             }
 
             if (descriptor.isCccd() &&
-                (pendingOperation is EnableNotifications || pendingOperation is DisableNotifications)
+                    (pendingOperation is EnableNotifications || pendingOperation is DisableNotifications)
             ) {
                 signalEndOfOperation()
             } else if (!descriptor.isCccd() && pendingOperation is DescriptorWrite) {
@@ -528,24 +550,24 @@ object ConnectionManager {
         }
 
         private fun onCccdWrite(
-            gatt: BluetoothGatt,
-            value: ByteArray,
-            characteristic: BluetoothGattCharacteristic
+                gatt: BluetoothGatt,
+                value: ByteArray,
+                characteristic: BluetoothGattCharacteristic
         ) {
             val charUuid = characteristic.uuid
             val notificationsEnabled =
-                value.contentEquals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) ||
-                    value.contentEquals(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                    value.contentEquals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) ||
+                            value.contentEquals(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
             val notificationsDisabled =
-                value.contentEquals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                    value.contentEquals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
 
             when {
                 notificationsEnabled -> {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
                     listeners.forEach {
                         it.get()?.onNotificationsEnabled?.invoke(
-                            gatt.device,
-                            characteristic
+                                gatt.device,
+                                characteristic
                         )
                     }
                 }
@@ -553,8 +575,8 @@ object ConnectionManager {
                     Timber.w("Notifications or indications DISABLED on $charUuid")
                     listeners.forEach {
                         it.get()?.onNotificationsDisabled?.invoke(
-                            gatt.device,
-                            characteristic
+                                gatt.device,
+                                characteristic
                         )
                     }
                 }
@@ -573,7 +595,7 @@ object ConnectionManager {
                     val previousBondState = getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, -1)
                     val bondState = getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
                     val bondTransition = "${previousBondState.toBondStateDescription()} to " +
-                        bondState.toBondStateDescription()
+                            bondState.toBondStateDescription()
                     Timber.w("${device?.address} bond state changed | $bondTransition")
                 }
             }
@@ -586,8 +608,9 @@ object ConnectionManager {
             else -> "ERROR: $this"
         }
     }
-//promenio sa private
-     fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
+
+    //promenio sa private
+    fun BluetoothDevice.isConnected() = deviceGattMap.containsKey(this)
     fun convertFromInteger(i: Int): UUID? {
         val MSB = 0x0000000000001000L
         val LSB = -0x7fffff7fa064cb05L
@@ -596,55 +619,55 @@ object ConnectionManager {
     }
 
     var BATTERY_LEVEL = convertFromInteger(0x2A19)
-    //var BATTERY_SERVICE = convertFromInteger(0x180F)
+    var BATTERY_SERVICE2 = convertFromInteger(0x180F)
     var BATTERY_SERVICE = convertFromInteger(0x2A19)
     var CLIENT_CHARACTERISTIC_CONFIG_UUID = convertFromInteger(0x2902)
     var HEART_RATE_CONTROL_POINT_CHAR_UUID = convertFromInteger(0x2A39)
     var HEART_RATE_SERVICE_UUID = convertFromInteger(0x180D)
-  //  var HEART_RATE_MEASUREMENT_CHAR_UUID = convertFromInteger(0x2A37)
+    var HEART_RATE_MEASUREMENT_CHAR_UUID = convertFromInteger(0x2A37)
     var UUID_HEART_RATE_MEASUREMENT = convertFromInteger(0x2A37)
 
-  /**  private fun broadcastUpdate(action: String) {
-        val intent = Intent(action)
-        sendBroadcast(intent)
+    /**  private fun broadcastUpdate(action: String) {
+    val intent = Intent(action)
+    sendBroadcast(intent)
     }
 
     private fun broadcastUpdate(action: String, characteristic: BluetoothGattCharacteristic) {
-        val intent = Intent(action)
+    val intent = Intent(action)
 
-        // This is special handling for the Heart Rate Measurement profile. Data
-        // parsing is carried out as per profile specifications.
-        when (characteristic.uuid) {
-            UUID_HEART_RATE_MEASUREMENT -> {
-                val flag = characteristic.properties
-                val format = when (flag and 0x01) {
-                    0x01 -> {
-                        Log.d(TAG, "Heart rate format UINT16.")
-                        BluetoothGattCharacteristic.FORMAT_UINT16
-                    }
-                    else -> {
-                        Log.d(TAG, "Heart rate format UINT8.")
-                        BluetoothGattCharacteristic.FORMAT_UINT8
-                    }
-                }
-                val heartRate = characteristic.getIntValue(format, 1)
-                Log.d(TAG, String.format("Received heart rate: %d", heartRate))
-                intent.putExtra(EXTRA_DATA, (heartRate).toString())
-            }
-            else -> {
-                // For all other profiles, writes the data formatted in HEX.
-                val data: ByteArray? = characteristic.value
-                if (data?.isNotEmpty() == true) {
-                    val hexString: String = data.joinToString(separator = " ") {
-                        String.format("%02X", it)
-                    }
-                    intent.putExtra(EXTRA_DATA, "$data\n$hexString")
-                }
-            }
-
-        }
-        sendBroadcast(intent)
+    // This is special handling for the Heart Rate Measurement profile. Data
+    // parsing is carried out as per profile specifications.
+    when (characteristic.uuid) {
+    UUID_HEART_RATE_MEASUREMENT -> {
+    val flag = characteristic.properties
+    val format = when (flag and 0x01) {
+    0x01 -> {
+    Log.d(TAG, "Heart rate format UINT16.")
+    BluetoothGattCharacteristic.FORMAT_UINT16
     }
-*/
+    else -> {
+    Log.d(TAG, "Heart rate format UINT8.")
+    BluetoothGattCharacteristic.FORMAT_UINT8
+    }
+    }
+    val heartRate = characteristic.getIntValue(format, 1)
+    Log.d(TAG, String.format("Received heart rate: %d", heartRate))
+    intent.putExtra(EXTRA_DATA, (heartRate).toString())
+    }
+    else -> {
+    // For all other profiles, writes the data formatted in HEX.
+    val data: ByteArray? = characteristic.value
+    if (data?.isNotEmpty() == true) {
+    val hexString: String = data.joinToString(separator = " ") {
+    String.format("%02X", it)
+    }
+    intent.putExtra(EXTRA_DATA, "$data\n$hexString")
+    }
+    }
+
+    }
+    sendBroadcast(intent)
+    }
+     */
 }
 

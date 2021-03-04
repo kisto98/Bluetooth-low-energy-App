@@ -21,11 +21,13 @@ class ConDevAdapter(
         private val items: MutableList<BluetoothDevice>?,
         private val onClickListener: ((device: BluetoothDevice) -> Unit)
 
-) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>()
+) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>(){
 
-{
 
-    private val TAG: String = "AppDebug"
+    private var mSelectedItem = -1
+    fun getSelectedItem():Int{
+        return  mSelectedItem
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = parent.context.layoutInflater.inflate(
@@ -40,14 +42,10 @@ class ConDevAdapter(
         if (item != null) {
             holder.bind(item)
         }
-
-
+        holder.itemView.radioButton.setChecked(position == mSelectedItem);
     }
 
-
-
     override fun getItemCount(): Int {
-
         if (items != null) {
             return items.size
         }
@@ -55,7 +53,7 @@ class ConDevAdapter(
     }
 
 
-    class ViewHolder
+    inner class ViewHolder
     constructor(
             private val view: View,
             private val onClickListener: ((device: BluetoothDevice) -> Unit)
@@ -66,12 +64,22 @@ class ConDevAdapter(
             view.con_mac_address.text= bluetoothDevice.address
             view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice)  }
             view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
+
+            itemView.radioButton.setOnClickListener {
+                mSelectedItem=getAdapterPosition()
+                notifyDataSetChanged();
+            }
+
         }
 
     }
 
 
 }
+
+
+
+
 
 
 
