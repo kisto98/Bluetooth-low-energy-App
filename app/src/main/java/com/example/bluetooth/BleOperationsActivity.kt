@@ -75,9 +75,7 @@ class BleOperationsActivity : AppCompatActivity() {
     }
 
 
-
     private var notifyingCharacteristics = mutableListOf<UUID>()
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,17 +89,16 @@ class BleOperationsActivity : AppCompatActivity() {
             setDisplayShowTitleEnabled(true)
             title = getString(R.string.ble_playground)
         }
-
-
-     //   menu.setOnClickListener { startActivity(Intent(this, MainActivity::class.java)) }
+        devicename.text = device.name
         imeuredjaja.text = device.address
-   //bottom menu
+        //bottom menu
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.selectedItemId = R.id.metrics
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.main -> {
                     Intent(this, MainActivity::class.java).also {
+                        it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                         startActivity(it)
                     }
                     overridePendingTransition(0, 0)
@@ -134,39 +131,43 @@ class BleOperationsActivity : AppCompatActivity() {
             true
         }
         ///
+        btn_dc.setOnClickListener { ConnectionManager.teardownConnection(device) }
     }
+
 
     //navmenu
 
     lateinit var toggle: ActionBarDrawerToggle
 
     //
-    fun menulayout(){
+    fun menulayout() {
         condevs_layout.apply {
             condevs_layout?.layoutManager = LinearLayoutManager(this@BleOperationsActivity)
             adapter = conDevAdapter
         }
     }
+
     private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
 
     private val conDevAdapter: ConDevAdapter by lazy {
-        ConDevAdapter(conbledev) {  bluetoothDevice ->
+        ConDevAdapter(conbledev) { bluetoothDevice ->
             Intent(this, BleOperationsActivity::class.java).also {
                 it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
                 startActivity(it)
 
             }
-            btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
-            radioButton.setOnClickListener{ radioButton.isChecked }
+          //  btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
 
         }
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
             return true
         }
         return super.onOptionsItemSelected(item)
     }
+
     ///end menu
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -181,17 +182,16 @@ class BleOperationsActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
- /**   override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressed()
-                return true
-            }
-        }
-        return super.onOptionsItemSelected(item)
+    /**   override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    when (item.itemId) {
+    android.R.id.home -> {
+    onBackPressed()
+    return true
     }
-*/
-
+    }
+    return super.onOptionsItemSelected(item)
+    }
+     */
 
 
     private val connectionEventListener by lazy {
@@ -255,7 +255,7 @@ class BleOperationsActivity : AppCompatActivity() {
                         Log.w("TAG", String.format("Received heart rate: %d", heartRate))
                         heartRate.toDouble()
                         hsrate.text = "Heart rate sensor  " + heartRate.toString()
-                        devicename.text= "Device name: "+ device.name
+                        devicename.text = "Device name: " + device.name
                         ///
                     }
                 }
@@ -272,6 +272,7 @@ class BleOperationsActivity : AppCompatActivity() {
             }
         }
     }
+
     private enum class CharacteristicProperty {
         Readable,
         Writable,
@@ -308,7 +309,6 @@ class BleOperationsActivity : AppCompatActivity() {
             this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
 }
 ////
-
 
 
 //var characteristic: BluetoothGattCharacteristic = bluetoothGatt.getService(HEART_RATE_SERVICE_UUID).getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)

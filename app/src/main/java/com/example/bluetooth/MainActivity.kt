@@ -203,9 +203,6 @@ class MainActivity : AppCompatActivity() {
                 startActivity(it)
 
             }
-            btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
-            radioButton.setOnClickListener { radioButton.isChecked }
-
         }
     }
 
@@ -342,6 +339,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
     //navmenu
     lateinit var toggle: ActionBarDrawerToggle
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -384,15 +382,29 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.metrics -> {
 
-                    ConDevAdapter(conbledev) { bluetoothDevice ->
-                        Intent(this@MainActivity, BleOperationsActivity::class.java).also {
-                            it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
-                            startActivity(it)
+
+                    if (rButton !== null) {
+                        if (rButton.isChecked) {
+
+                            val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+
+                            Intent(this@MainActivity, BleOperationsActivity::class.java).also {
+                                it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+                                startActivity(it)
+
+                                overridePendingTransition(0, 0)
+                                return@setOnNavigationItemSelectedListener true
+                            }
+                        } else {
+                            toast("not connected to any dev")
                         }
                     }
-                    overridePendingTransition(0, 0)
-                    return@setOnNavigationItemSelectedListener true
-                }
+                    else {
+                        toast("not connected to any dev")
+                    }
+                        }
+
+
                 R.id.settings -> {
                     Intent(this@MainActivity, SettingsActivity::class.java).also {
                         startActivity(it)

@@ -394,8 +394,8 @@ object ConnectionManager {
 
 
                     //turn on/off for notifications
-                    enableNotifications(device, characteristic)
-                    enableNotifications(device, characteristic2)
+                 //   enableNotifications(device, characteristic)
+                 //   enableNotifications(device, characteristic2)
 
 
 

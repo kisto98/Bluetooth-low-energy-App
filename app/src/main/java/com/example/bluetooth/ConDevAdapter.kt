@@ -15,18 +15,18 @@ import org.jetbrains.anko.bluetoothManager
 import org.jetbrains.anko.layoutInflater
 
 
-
 class ConDevAdapter(
 
         private val items: MutableList<BluetoothDevice>?,
         private val onClickListener: ((device: BluetoothDevice) -> Unit)
 
-) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>(){
+) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>() {
 
 
-    private var mSelectedItem = -1
-    fun getSelectedItem():Int{
-        return  mSelectedItem
+    var mSelectedItem = -1
+
+    private fun getSelectedItem(): Int {
+        return mSelectedItem
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -37,12 +37,14 @@ class ConDevAdapter(
         )
         return ViewHolder(view, onClickListener)
     }
+
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items?.get(position)
         if (item != null) {
             holder.bind(item)
         }
-        holder.itemView.radioButton.setChecked(position == mSelectedItem);
+        holder.itemView.rButton.setChecked(position == mSelectedItem);
+
     }
 
     override fun getItemCount(): Int {
@@ -57,17 +59,18 @@ class ConDevAdapter(
     constructor(
             private val view: View,
             private val onClickListener: ((device: BluetoothDevice) -> Unit)
-    ): RecyclerView.ViewHolder(view){
+    ) : RecyclerView.ViewHolder(view) {
 
-        fun bind(bluetoothDevice: BluetoothDevice){
+        fun bind(bluetoothDevice: BluetoothDevice) {
             view.con_device_name.text = bluetoothDevice.name
-            view.con_mac_address.text= bluetoothDevice.address
-            view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice)  }
-            view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
+            view.con_mac_address.text = bluetoothDevice.address
+            view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+            //     view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
 
-            itemView.radioButton.setOnClickListener {
-                mSelectedItem=getAdapterPosition()
-                notifyDataSetChanged();
+            itemView.rButton.setOnClickListener {
+                mSelectedItem = getAdapterPosition()
+                notifyDataSetChanged()
+                //   onClickListener.invoke(bluetoothDevice)
             }
 
         }
@@ -76,11 +79,6 @@ class ConDevAdapter(
 
 
 }
-
-
-
-
-
 
 
 //lateinit var device: BluetoothDevice
