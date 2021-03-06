@@ -201,7 +201,7 @@ class MainActivity : AppCompatActivity() {
             Intent(this, BleOperationsActivity::class.java).also {
                 it.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
                 startActivity(it)
-
+                overridePendingTransition(0, 0)
             }
         }
     }
@@ -258,6 +258,7 @@ class MainActivity : AppCompatActivity() {
                 Intent(this@MainActivity, BleOperationsActivity::class.java).also {
                     it.putExtra(BluetoothDevice.EXTRA_DEVICE, gatt.device)
                     startActivity(it)
+                    overridePendingTransition(0, 0)
                 }
                 ConnectionManager.unregisterListener(this)
             }
@@ -383,26 +384,27 @@ class MainActivity : AppCompatActivity() {
                 R.id.metrics -> {
 
 
-                    if (rButton !== null) {
-                        if (rButton.isChecked) {
+                    if (rButton!==null) {
+                        // conbledev?.get(conDevAdapter.mSelectedItem)
+                        val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                        //     rButton.setOnClickListener { val device=  intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                        Intent(this@MainActivity, BleOperationsActivity::class.java).also {
+                            it.putExtra(BluetoothDevice.EXTRA_DEVICE, conbledev?.get(conDevAdapter.mSelectedItem))
+                            startActivity(it)
 
-                            val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                            overridePendingTransition(0, 0)
+                            //
 
-                            Intent(this@MainActivity, BleOperationsActivity::class.java).also {
-                                it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
-                                startActivity(it)
-
-                                overridePendingTransition(0, 0)
-                                return@setOnNavigationItemSelectedListener true
-                            }
-                        } else {
-                            toast("not connected to any dev")
                         }
                     }
-                    else {
-                        toast("not connected to any dev")
+                    if (rButton==null){
+                        toast("not conected to any dev")
                     }
-                        }
+
+
+
+                    return@setOnNavigationItemSelectedListener true
+                }
 
 
                 R.id.settings -> {

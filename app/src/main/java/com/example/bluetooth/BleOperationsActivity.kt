@@ -89,6 +89,7 @@ class BleOperationsActivity : AppCompatActivity() {
             setDisplayShowTitleEnabled(true)
             title = getString(R.string.ble_playground)
         }
+        overridePendingTransition(0, 0)
         devicename.text = device.name
         imeuredjaja.text = device.address
         //bottom menu

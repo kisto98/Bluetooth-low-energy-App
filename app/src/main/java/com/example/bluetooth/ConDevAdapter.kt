@@ -4,6 +4,7 @@ import android.bluetooth.*
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,14 +19,13 @@ import org.jetbrains.anko.layoutInflater
 class ConDevAdapter(
 
         private val items: MutableList<BluetoothDevice>?,
-        private val onClickListener: ((device: BluetoothDevice) -> Unit)
-
+         val onClickListener: ((device: BluetoothDevice) -> Unit)
 ) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>() {
 
 
     var mSelectedItem = -1
 
-    private fun getSelectedItem(): Int {
+     fun getSelectedItem(): Int {
         return mSelectedItem
     }
 
@@ -44,8 +44,7 @@ class ConDevAdapter(
             holder.bind(item)
         }
         holder.itemView.rButton.setChecked(position == mSelectedItem);
-
-    }
+            }
 
     override fun getItemCount(): Int {
         if (items != null) {
@@ -64,21 +63,24 @@ class ConDevAdapter(
         fun bind(bluetoothDevice: BluetoothDevice) {
             view.con_device_name.text = bluetoothDevice.name
             view.con_mac_address.text = bluetoothDevice.address
-            view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+      //      view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
             //     view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
 
             itemView.rButton.setOnClickListener {
-                mSelectedItem = getAdapterPosition()
+                mSelectedItem = adapterPosition
                 notifyDataSetChanged()
-                //   onClickListener.invoke(bluetoothDevice)
-            }
 
+                Log.w("selected","$mSelectedItem")
+            }
+                //   onClickListener.invoke(bluetoothDevice)
+
+            }
         }
 
     }
 
 
-}
+
 
 
 //lateinit var device: BluetoothDevice
