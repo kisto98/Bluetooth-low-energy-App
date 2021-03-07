@@ -19,7 +19,7 @@ import org.jetbrains.anko.layoutInflater
 class ConDevAdapter(
 
         private val items: MutableList<BluetoothDevice>?,
-         val onClickListener: ((device: BluetoothDevice) -> Unit)
+        private val onClickListener: ((device: BluetoothDevice) -> Unit)
 ) : RecyclerView.Adapter<ConDevAdapter.ViewHolder>() {
 
 
@@ -65,11 +65,11 @@ class ConDevAdapter(
             view.con_mac_address.text = bluetoothDevice.address
       //      view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
             //     view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
-
+            view.setOnClickListener {   mSelectedItem = adapterPosition
+                notifyDataSetChanged() }
             itemView.rButton.setOnClickListener {
                 mSelectedItem = adapterPosition
                 notifyDataSetChanged()
-
                 Log.w("selected","$mSelectedItem")
             }
                 //   onClickListener.invoke(bluetoothDevice)

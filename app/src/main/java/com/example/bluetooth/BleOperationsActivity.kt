@@ -60,23 +60,8 @@ class BleOperationsActivity : AppCompatActivity() {
             service.characteristics ?: listOf()
         } ?: listOf()
     }
-    private val characteristicProperties by lazy {
-        characteristics.map { characteristic ->
-            characteristic to mutableListOf<CharacteristicProperty>().apply {
-                if (characteristic.isNotifiable()) add(CharacteristicProperty.Notifiable)
-                if (characteristic.isIndicatable()) add(CharacteristicProperty.Indicatable)
-                if (characteristic.isReadable()) add(CharacteristicProperty.Readable)
-                if (characteristic.isWritable()) add(CharacteristicProperty.Writable)
-                if (characteristic.isWritableWithoutResponse()) {
-                    add(CharacteristicProperty.WritableWithoutResponse)
-                }
-            }.toList()
-        }.toMap()
-    }
-
 
     private var notifyingCharacteristics = mutableListOf<UUID>()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ConnectionManager.registerListener(connectionEventListener)
@@ -132,24 +117,32 @@ class BleOperationsActivity : AppCompatActivity() {
             true
         }
         ///
-        btn_dc.setOnClickListener { ConnectionManager.teardownConnection(device) }
+        btn_dc.setOnClickListener {
+            ConnectionManager.teardownConnection(device)
+            conbledev?.remove(device)
+            conDevAdapter.notifyDataSetChanged()
+
+        }
     }
 
 
     //navmenu
-
     lateinit var toggle: ActionBarDrawerToggle
-
-    //
     fun menulayout() {
         condevs_layout.apply {
             condevs_layout?.layoutManager = LinearLayoutManager(this@BleOperationsActivity)
             adapter = conDevAdapter
         }
     }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.nav_drawer_menu, menu)
+        menulayout()
+        return true
+    }
+    //end navmenu
 
     private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
-
     private val conDevAdapter: ConDevAdapter by lazy {
         ConDevAdapter(conbledev) { bluetoothDevice ->
             Intent(this, BleOperationsActivity::class.java).also {
@@ -157,11 +150,10 @@ class BleOperationsActivity : AppCompatActivity() {
                 startActivity(it)
 
             }
-          //  btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
+            //  btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
 
         }
     }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
             return true
@@ -170,12 +162,7 @@ class BleOperationsActivity : AppCompatActivity() {
     }
 
     ///end menu
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.nav_drawer_menu, menu)
-        menulayout()
-        return true
-    }
+
 
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
@@ -193,7 +180,6 @@ class BleOperationsActivity : AppCompatActivity() {
     return super.onOptionsItemSelected(item)
     }
      */
-
 
     private val connectionEventListener by lazy {
         ConnectionEventListener().apply {

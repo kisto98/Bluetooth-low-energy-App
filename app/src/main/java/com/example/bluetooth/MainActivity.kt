@@ -65,10 +65,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     // location premision
-    val isLocationPermissionGranted
+    private val isLocationPermissionGranted
         get() = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
 
-    fun Context.hasPermission(permissionType: String): Boolean {
+    private fun Context.hasPermission(permissionType: String): Boolean {
         return ContextCompat.checkSelfPermission(this, permissionType) ==
                 PackageManager.PERMISSION_GRANTED
     }
@@ -263,13 +263,15 @@ class MainActivity : AppCompatActivity() {
                 ConnectionManager.unregisterListener(this)
             }
             onDisconnect = {
-                runOnUiThread {
+       /**         runOnUiThread {
                     alert {
                         title = "Disconnected"
                         message = "Disconnected or unable to connect to device."
                         positiveButton("OK") {}
                     }.show()
-                }
+               } */
+            conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
+                conDevAdapter.notifyDataSetChanged()
             }
         }
     }
@@ -394,18 +396,20 @@ class MainActivity : AppCompatActivity() {
 
                             overridePendingTransition(0, 0)
                             //
-
+                            return@setOnNavigationItemSelectedListener true
                         }
                     }
                     if (rButton==null){
                         toast("not conected to any dev")
+                      //  bottomNavigationView.selectedItemId = R.id.main
+                        return@setOnNavigationItemSelectedListener false
+
                     }
 
 
 
-                    return@setOnNavigationItemSelectedListener true
-                }
 
+                }
 
                 R.id.settings -> {
                     Intent(this@MainActivity, SettingsActivity::class.java).also {
