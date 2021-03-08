@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat.*
 import androidx.recyclerview.widget.RecyclerView
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.row_connected_devices.view.*
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.anko.bluetoothManager
 import org.jetbrains.anko.layoutInflater
 
@@ -43,7 +44,7 @@ class ConDevAdapter(
         if (item != null) {
             holder.bind(item)
         }
-        holder.itemView.rButton.setChecked(position == mSelectedItem);
+        holder.itemView.rButton.isChecked = position == mSelectedItem;
             }
 
     override fun getItemCount(): Int {
@@ -65,7 +66,8 @@ class ConDevAdapter(
             view.con_mac_address.text = bluetoothDevice.address
       //      view.btn_disconnect.setOnClickListener { ConnectionManager.teardownConnection(bluetoothDevice) }
             //     view.setOnClickListener { onClickListener.invoke(bluetoothDevice) }
-            view.setOnClickListener {   mSelectedItem = adapterPosition
+            view.setOnClickListener {
+                mSelectedItem = adapterPosition
                 notifyDataSetChanged() }
             itemView.rButton.setOnClickListener {
                 mSelectedItem = adapterPosition

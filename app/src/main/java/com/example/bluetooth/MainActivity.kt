@@ -245,36 +245,45 @@ class MainActivity : AppCompatActivity() {
     //bt connect
 
     override fun onResume() {
-        super.onResume()
+        Log.w("devices", "$conbledev")
+     //   setUpBottombar()
+      //  conDevAdapter.notifyDataSetChanged()
         ConnectionManager.registerListener(connectionEventListener)
         if (!bluetoothAdapter.isEnabled) {
             promptEnableBluetooth()
         }
+        super.onResume()
     }
 
     private val connectionEventListener by lazy {
         ConnectionEventListener().apply {
+            overridePendingTransition(0, 0)
             onConnectionSetupComplete = { gatt ->
                 Intent(this@MainActivity, BleOperationsActivity::class.java).also {
                     it.putExtra(BluetoothDevice.EXTRA_DEVICE, gatt.device)
                     startActivity(it)
                     overridePendingTransition(0, 0)
                 }
+                overridePendingTransition(0, 0)
                 ConnectionManager.unregisterListener(this)
             }
             onDisconnect = {
-       /**         runOnUiThread {
-                    alert {
-                        title = "Disconnected"
-                        message = "Disconnected or unable to connect to device."
-                        positiveButton("OK") {}
-                    }.show()
-               } */
-            conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
-                conDevAdapter.notifyDataSetChanged()
+
+                /**         runOnUiThread {
+                alert {
+                title = "Disconnected"
+                message = "Disconnected or unable to connect to device."
+                positiveButton("OK") {}
+                }.show()
+                } */
+          //      conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
+            //    conDevAdapter.notifyDataSetChanged()
+
+
             }
         }
     }
+
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -292,10 +301,6 @@ class MainActivity : AppCompatActivity() {
                     Log.i("asd", "Attempting to start service discovery:" +
                             gatt.discoverServices());
 
-                    //
-                    conbledev?.add(1, bluetoothDevice)
-                    conDevAdapter.notifyItemInserted(+1)
-                    conDevAdapter.notifyDataSetChanged()
 
                     ///get connected
                     if (pairedDevices.size > 0) {
@@ -323,19 +328,19 @@ class MainActivity : AppCompatActivity() {
                         }
                         connectedDeviceMap!!.remove(deviceAddress)
                     }
-                    conbledev?.remove(bluetoothDevice)
-                    conDevAdapter.notifyItemRemoved(-1)
+                    conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
+                    conDevAdapter.notifyItemRemoved(conDevAdapter.mSelectedItem)
                     conDevAdapter.notifyDataSetChanged()
-
+                    ConnectionManager.unregisterListener(connectionEventListener)
 
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
                 }
             } else {
                 Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
-                conbledev?.remove(bluetoothDevice)
-                conDevAdapter.notifyItemRemoved(-1)
-                conDevAdapter.notifyDataSetChanged()
+          //      conbledev?.remove(bluetoothDevice)
+            //    conDevAdapter.notifyItemRemoved(-1)
+              //  conDevAdapter.notifyDataSetChanged()
 
                 gatt.close()
             }
@@ -358,10 +363,10 @@ class MainActivity : AppCompatActivity() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+
         scan_button.setOnClickListener { if (isScanning) stopBleScan() else startBleScan() }
         setupRecyclerView()
         connectedDeviceMap = HashMap()
-
 //navtop
         toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
         drawerLayout.addDrawerListener(toggle)
@@ -373,7 +378,11 @@ class MainActivity : AppCompatActivity() {
             }
             true
         }
-//navbottom
+        setUpBottombar()
+    }
+
+    private fun setUpBottombar() {
+        //navbottom
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.selectedItemId = R.id.main
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
@@ -381,36 +390,25 @@ class MainActivity : AppCompatActivity() {
                 R.id.main -> {
                     overridePendingTransition(0, 0)
                     return@setOnNavigationItemSelectedListener false
-
+                    
                 }
                 R.id.metrics -> {
 
-
-                    if (rButton!==null) {
-                        // conbledev?.get(conDevAdapter.mSelectedItem)
-                        val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                        //     rButton.setOnClickListener { val device=  intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                    if (rButton !== null) {
+                        val dev = conbledev?.get(conDevAdapter.getSelectedItem())
                         Intent(this@MainActivity, BleOperationsActivity::class.java).also {
-                            it.putExtra(BluetoothDevice.EXTRA_DEVICE, conbledev?.get(conDevAdapter.mSelectedItem))
+                            it.putExtra(BluetoothDevice.EXTRA_DEVICE, dev)
                             startActivity(it)
-
+                            Log.w("uzeo si", "$dev")
                             overridePendingTransition(0, 0)
-                            //
                             return@setOnNavigationItemSelectedListener true
+
                         }
                     }
-                    if (rButton==null){
-                        toast("not conected to any dev")
-                      //  bottomNavigationView.selectedItemId = R.id.main
-                        return@setOnNavigationItemSelectedListener false
-
+                    else {
+                        toast("Not connected to any device")
                     }
-
-
-
-
                 }
-
                 R.id.settings -> {
                     Intent(this@MainActivity, SettingsActivity::class.java).also {
                         startActivity(it)
@@ -421,9 +419,8 @@ class MainActivity : AppCompatActivity() {
             }
             false
         }
-
     }
-    //lateinit var device: BluetoothDevice
+
 }
 
 

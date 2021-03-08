@@ -373,31 +373,15 @@ object ConnectionManager {
                     listeners.forEach { it.get()?.onConnectionSetupComplete?.invoke(this) }
 
                     ////my add
-
-
                     val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
                             .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
-                 //   gatt.setCharacteristicNotification(characteristic2, true)
-
-                //    val descriptor2 = characteristic2.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
-                //    descriptor2.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                //    gatt.writeDescriptor(descriptor2)
-
 
                     val characteristic = gatt.getService(BATTERY_SERVICE2)
                             .getCharacteristic(BATTERY_LEVEL)
-               //     gatt.setCharacteristicNotification(characteristic, true)
-
-              //      val descriptor = characteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG_UUID)
-              //      descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-              //      gatt.writeDescriptor(descriptor)
-
 
                     //turn on/off for notifications
-                 //   enableNotifications(device, characteristic)
-                 //   enableNotifications(device, characteristic2)
-
-
+                    enableNotifications(device, characteristic)
+                    enableNotifications(device, characteristic2)
 
                 } else {
                     Timber.e("Service discovery failed due to status $status")

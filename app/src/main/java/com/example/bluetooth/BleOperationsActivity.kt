@@ -17,14 +17,12 @@
 package com.example.bluetooth
 
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
-import android.nfc.NfcAdapter.EXTRA_DATA
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -35,18 +33,12 @@ import android.widget.EditText
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
-import com.example.bluetooth.ConnectionManager.BATTERY_SERVICE
 import com.example.bluetooth.ConnectionManager.UUID_HEART_RATE_MEASUREMENT
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_ble_operations.*
-import kotlinx.android.synthetic.main.activity_ble_operations.drawerLayout
-import kotlinx.android.synthetic.main.activity_ble_operations.navView
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header.*
-import kotlinx.android.synthetic.main.row_connected_devices.*
-import org.jetbrains.anko.*
+import org.jetbrains.anko.alert
+import org.jetbrains.anko.bluetoothManager
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -64,7 +56,7 @@ class BleOperationsActivity : AppCompatActivity() {
     private var notifyingCharacteristics = mutableListOf<UUID>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ConnectionManager.registerListener(connectionEventListener)
+
         super.onCreate(savedInstanceState)
         device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 ?: error("Missing BluetoothDevice from MainActivity!")
@@ -78,6 +70,33 @@ class BleOperationsActivity : AppCompatActivity() {
         devicename.text = device.name
         imeuredjaja.text = device.address
         //bottom menu
+        setUpBottombar()
+
+        //top menu
+        toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        navView.setNavigationItemSelectedListener {
+            when (it.itemId) {
+                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
+    }
+
+    override fun onStart() {
+        btn_dc.setOnClickListener {
+            ConnectionManager.teardownConnection(device)
+            // conbledev?.remove(device)
+            //    conDevAdapter.notifyDataSetChanged()
+            Log.w("btn", "presed dc")
+        }
+        ConnectionManager.registerListener(connectionEventListener)
+        super.onStart()
+    }
+    private fun setUpBottombar() {
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.selectedItemId = R.id.metrics
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
@@ -104,27 +123,7 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             false
         }
-
-        //top menu
-        toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        navView.setNavigationItemSelectedListener {
-            when (it.itemId) {
-                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
-            }
-            true
-        }
-        ///
-        btn_dc.setOnClickListener {
-            ConnectionManager.teardownConnection(device)
-            conbledev?.remove(device)
-            conDevAdapter.notifyDataSetChanged()
-
-        }
     }
-
 
     //navmenu
     lateinit var toggle: ActionBarDrawerToggle
@@ -134,6 +133,7 @@ class BleOperationsActivity : AppCompatActivity() {
             adapter = conDevAdapter
         }
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.nav_drawer_menu, menu)
@@ -154,6 +154,7 @@ class BleOperationsActivity : AppCompatActivity() {
 
         }
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (toggle.onOptionsItemSelected(item)) {
             return true
@@ -170,19 +171,23 @@ class BleOperationsActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    /**   override fun onOptionsItemSelected(item: MenuItem): Boolean {
-    when (item.itemId) {
-    android.R.id.home -> {
-    onBackPressed()
-    return true
+    override fun onRestart() {
+        ConnectionManager.unregisterListener(connectionEventListener)
+     //   ConnectionManager.teardownConnection(device)
+        super.onRestart()
     }
+
+
+    override fun onBackPressed(): Unit {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
+        overridePendingTransition(0, 0)
     }
-    return super.onOptionsItemSelected(item)
-    }
-     */
 
     private val connectionEventListener by lazy {
         ConnectionEventListener().apply {
+
             onDisconnect = {
                 runOnUiThread {
                     alert {
@@ -206,8 +211,8 @@ class BleOperationsActivity : AppCompatActivity() {
             }
 
             onCharacteristicChanged = { _, characteristic ->
+                ////my add
 
-                ///
                 when (characteristic.uuid) {
                     ConnectionManager.BATTERY_SERVICE -> {
                         val flag = characteristic.properties
