@@ -55,47 +55,6 @@ class BleOperationsActivity : AppCompatActivity() {
 
     private var notifyingCharacteristics = mutableListOf<UUID>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-
-        super.onCreate(savedInstanceState)
-        device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                ?: error("Missing BluetoothDevice from MainActivity!")
-        setContentView(R.layout.activity_ble_operations)
-        supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(true)
-            setDisplayShowTitleEnabled(true)
-            title = getString(R.string.ble_playground)
-        }
-        overridePendingTransition(0, 0)
-        devicename.text = device.name
-        imeuredjaja.text = device.address
-        //bottom menu
-        setUpBottombar()
-
-        //top menu
-        toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        navView.setNavigationItemSelectedListener {
-            when (it.itemId) {
-                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
-            }
-            true
-        }
-
-    }
-
-    override fun onStart() {
-        btn_dc.setOnClickListener {
-            ConnectionManager.teardownConnection(device)
-            // conbledev?.remove(device)
-            //    conDevAdapter.notifyDataSetChanged()
-            Log.w("btn", "presed dc")
-        }
-        ConnectionManager.registerListener(connectionEventListener)
-        super.onStart()
-    }
     private fun setUpBottombar() {
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNavigationView.selectedItemId = R.id.metrics
@@ -103,6 +62,7 @@ class BleOperationsActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.main -> {
                     Intent(this, MainActivity::class.java).also {
+                      //  it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                         it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                         startActivity(it)
                     }
@@ -111,7 +71,7 @@ class BleOperationsActivity : AppCompatActivity() {
 
                 }
                 R.id.metrics -> {
-                    return@setOnNavigationItemSelectedListener false
+                    return@setOnNavigationItemSelectedListener true
                 }
                 R.id.settings -> {
                     Intent(this, SettingsActivity::class.java).also {
@@ -123,6 +83,7 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             false
         }
+        Log.w("selected", "s$bottomNavigationView.selectedItemId")
     }
 
     //navmenu
@@ -168,21 +129,28 @@ class BleOperationsActivity : AppCompatActivity() {
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
         ConnectionManager.teardownConnection(device)
+        Log.w("ActivityState", "onDestroyBle")
         super.onDestroy()
     }
 
-    override fun onRestart() {
-        ConnectionManager.unregisterListener(connectionEventListener)
+  //  override fun onRestart() {
+    //    ConnectionManager.unregisterListener(connectionEventListener)
      //   ConnectionManager.teardownConnection(device)
-        super.onRestart()
-    }
+   //     super.onRestart()
+   // }
 
 
     override fun onBackPressed(): Unit {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
-        finish()
+        Intent(this, MainActivity::class.java).also {
+            it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+           // it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            ConnectionManager.unregisterListener(connectionEventListener)
+            startActivity(it)
+            overridePendingTransition(0, 0)
+        }
         overridePendingTransition(0, 0)
+
+
     }
 
     private val connectionEventListener by lazy {
@@ -299,6 +267,79 @@ class BleOperationsActivity : AppCompatActivity() {
 
     private fun String.hexToBytes() =
             this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
+
+///
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                ?: error("Missing BluetoothDevice from MainActivity!")
+        setContentView(R.layout.activity_ble_operations)
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowTitleEnabled(true)
+            title = getString(R.string.ble_playground)
+        }
+        overridePendingTransition(0, 0)
+        devicename.text = device.name
+        imeuredjaja.text = device.address
+        //bottom menu
+        setUpBottombar()
+
+        //top menu
+        toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        navView.setNavigationItemSelectedListener {
+            when (it.itemId) {
+                //      R.id.mItem -> Toast.makeText(applicationContext, "clicked", Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
+        Log.w("ActivityState", "onCreateBle")
+    }
+
+    override fun onStart() {
+        overridePendingTransition(0, 0)
+        super.onStart()
+        Log.w("ActivityState", "onStartBle")
+    }
+
+    override fun onRestart() {
+
+        overridePendingTransition(0, 0)
+        super.onRestart()
+        Log.w("ActivityState", "onRestartBle")
+    }
+    override fun onResume() {
+        overridePendingTransition(0, 0)
+        setUpBottombar()
+        btn_dc.setOnClickListener {
+            ConnectionManager.teardownConnection(device)
+            // conbledev?.remove(device)
+            //    conDevAdapter.notifyDataSetChanged()
+
+            Log.w("btn", "presed dc")
+        }
+        ConnectionManager.registerListener(connectionEventListener)
+        Log.w("ActivityState", "onResumeBle")
+        super.onResume()
+    }
+    override fun onPause() {
+        overridePendingTransition(0, 0)
+        super.onPause()
+        Log.w("ActivityState", "onPauseBle")
+    }
+    override fun onStop() {
+        overridePendingTransition(0, 0)
+        super.onStop()
+        Log.w("ActivityState", "onStopBle")
+    }
+
+
+
 }
 ////
 

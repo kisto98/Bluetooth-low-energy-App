@@ -380,8 +380,8 @@ object ConnectionManager {
                             .getCharacteristic(BATTERY_LEVEL)
 
                     //turn on/off for notifications
-                    enableNotifications(device, characteristic)
-                    enableNotifications(device, characteristic2)
+                 //   enableNotifications(device, characteristic)
+               //     enableNotifications(device, characteristic2)
 
                 } else {
                     Timber.e("Service discovery failed due to status $status")
