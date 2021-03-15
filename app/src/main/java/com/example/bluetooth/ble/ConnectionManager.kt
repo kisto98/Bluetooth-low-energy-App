@@ -373,11 +373,11 @@ object ConnectionManager {
                     listeners.forEach { it.get()?.onConnectionSetupComplete?.invoke(this) }
 
                     ////my add
-                    val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
-                            .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
+        //            val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
+        //                    .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
 
-                    val characteristic = gatt.getService(BATTERY_SERVICE2)
-                            .getCharacteristic(BATTERY_LEVEL)
+        //            val characteristic = gatt.getService(BATTERY_SERVICE2)
+        //                    .getCharacteristic(BATTERY_LEVEL)
 
                     //turn on/off for notifications
                  //   enableNotifications(device, characteristic)

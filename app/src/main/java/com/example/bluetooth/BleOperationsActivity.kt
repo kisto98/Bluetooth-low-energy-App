@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -37,8 +38,13 @@ import com.example.bluetooth.ConnectionManager.UUID_HEART_RATE_MEASUREMENT
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_ble_operations.*
 import kotlinx.android.synthetic.main.nav_header.*
+import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
+import no.nordicsemi.android.dfu.DfuServiceController
+import no.nordicsemi.android.dfu.DfuServiceInitiator
+import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
+import org.jetbrains.anko.toast
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,7 +68,7 @@ class BleOperationsActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.main -> {
                     Intent(this, MainActivity::class.java).also {
-                      //  it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        //  it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                         it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                         startActivity(it)
                     }
@@ -103,7 +109,11 @@ class BleOperationsActivity : AppCompatActivity() {
     }
     //end navmenu
 
-    private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
+    private val conbledev: MutableList<BluetoothDevice>? by lazy {
+        bluetoothManager.getConnectedDevices(
+            BluetoothProfile.GATT
+        )
+    }
     private val conDevAdapter: ConDevAdapter by lazy {
         ConDevAdapter(conbledev) { bluetoothDevice ->
             Intent(this, BleOperationsActivity::class.java).also {
@@ -129,21 +139,22 @@ class BleOperationsActivity : AppCompatActivity() {
     override fun onDestroy() {
         ConnectionManager.unregisterListener(connectionEventListener)
         ConnectionManager.teardownConnection(device)
+        DfuServiceListenerHelper.unregisterProgressListener(this, mDfuProgressListener)
         Log.w("ActivityState", "onDestroyBle")
         super.onDestroy()
     }
 
-  //  override fun onRestart() {
+    //  override fun onRestart() {
     //    ConnectionManager.unregisterListener(connectionEventListener)
-     //   ConnectionManager.teardownConnection(device)
-   //     super.onRestart()
-   // }
+    //   ConnectionManager.teardownConnection(device)
+    //     super.onRestart()
+    // }
 
 
     override fun onBackPressed(): Unit {
         Intent(this, MainActivity::class.java).also {
             it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
-           // it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            // it.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             ConnectionManager.unregisterListener(connectionEventListener)
             startActivity(it)
             overridePendingTransition(0, 0)
@@ -255,25 +266,26 @@ class BleOperationsActivity : AppCompatActivity() {
     }
 
     private fun Context.hideKeyboard(view: View) {
-        val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        val inputMethodManager =
+            getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun EditText.showKeyboard() {
-        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val inputMethodManager =
+            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         requestFocus()
         inputMethodManager.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun String.hexToBytes() =
-            this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
+        this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
 
 ///
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                ?: error("Missing BluetoothDevice from MainActivity!")
+            ?: error("Missing BluetoothDevice from MainActivity!")
         setContentView(R.layout.activity_ble_operations)
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
@@ -285,7 +297,7 @@ class BleOperationsActivity : AppCompatActivity() {
         imeuredjaja.text = device.address
         //bottom menu
         setUpBottombar()
-
+        DfuServiceListenerHelper.registerProgressListener(this, mDfuProgressListener)
         //top menu
         toggle = ActionBarDrawerToggle(this, drawerLayout, R.string.open, R.string.close)
         drawerLayout.addDrawerListener(toggle)
@@ -297,22 +309,22 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             true
         }
-
-        Log.w("ActivityState", "onCreateBle")
+    Log.w("ActivityState", "onCreateBle")
     }
 
     override fun onStart() {
         overridePendingTransition(0, 0)
         super.onStart()
+        update_dfu()
         Log.w("ActivityState", "onStartBle")
     }
 
     override fun onRestart() {
-
         overridePendingTransition(0, 0)
         super.onRestart()
         Log.w("ActivityState", "onRestartBle")
     }
+
     override fun onResume() {
         overridePendingTransition(0, 0)
         setUpBottombar()
@@ -327,24 +339,86 @@ class BleOperationsActivity : AppCompatActivity() {
         Log.w("ActivityState", "onResumeBle")
         super.onResume()
     }
+
     override fun onPause() {
         overridePendingTransition(0, 0)
         super.onPause()
         Log.w("ActivityState", "onPauseBle")
     }
+
     override fun onStop() {
         overridePendingTransition(0, 0)
         super.onStop()
         Log.w("ActivityState", "onStopBle")
     }
 
+    //Adding dfu
+    fun update_dfu() {
+        btnchose.setOnClickListener {
 
+            val intent = Intent()
+                .setType("*/*")
+                .setAction(Intent.ACTION_GET_CONTENT)
+            startActivityForResult(Intent.createChooser(intent, "Select a file"), 111)
+            val selectedFile = intent.getParcelableExtra<Uri>("path")
+        }
+        otaStartButton.setOnClickListener {
 
+            val file = intent.getParcelableExtra<Uri>("path")
+            if (file !== null) {
+                val file1 = file.path
+                pathsomthing.text = file.toString()
+                val starter: DfuServiceInitiator = DfuServiceInitiator(device.address)
+                    .setDeviceName(device.name)
+                    .setKeepBond(false)
+                    //       .setForceDfu(false)
+                    .setZip(file)
+                    .setPacketsReceiptNotificationsEnabled(true)
+                    .setPacketsReceiptNotificationsValue(DfuServiceInitiator.DEFAULT_PRN_VALUE)
+                    .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
+                    .setDisableNotification(false)
+
+                // starter.start(this, DfuService::class.java)
+                DfuServiceInitiator.createDfuNotificationChannel(this);
+                val controller: DfuServiceController = starter.start(this, DfuService::class.java)
+                Log.w("start", "$starter")
+                Log.w("files", "$file1")
+
+            }
+        }
+    }
+
+    private val mDfuProgressListener = object : DfuProgressListenerAdapter() {
+        override fun onDfuCompleted(deviceAddress: String) {
+            toast("Update done")
+        }
+
+        override fun onError(deviceAddress: String, error: Int, errorType: Int, message: String?) {
+            toast("Error happened try again")
+        }
+
+        override fun onDfuProcessStarted(deviceAddress: String) {
+            toast("Updating started")
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 111 && resultCode == RESULT_OK) {
+
+            val path = data?.data
+            intent.putExtra("path", path)
+            setResult(Activity.RESULT_OK, intent)
+            //   finish()
+
+            Log.w("file1", "$$path")
+        }
+    }
 }
-////
 
 
-//var characteristic: BluetoothGattCharacteristic = bluetoothGatt.getService(HEART_RATE_SERVICE_UUID).getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
-//lateinit var bluetoothGatt: BluetoothGatt
+
+
 
 

@@ -142,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { scan_button.text = if (value) "Stop Scan" else "Start Scan" }
         }
 
-    val device_name = "Nordic_HRM"
+    val device_name = "ExtremeMotion"
 
     private val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
