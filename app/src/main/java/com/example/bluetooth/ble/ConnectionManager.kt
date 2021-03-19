@@ -24,9 +24,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.example.bluetooth.ble.*
-import kotlinx.android.synthetic.main.activity_ble_operations.*
+import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.*
@@ -48,12 +47,12 @@ object ConnectionManager {
     private var pendingOperation: BleOperationType? = null
 
     fun servicesOnDevice(device: BluetoothDevice): List<BluetoothGattService>? =
-            deviceGattMap[device]?.services
+        deviceGattMap[device]?.services
 
     fun listenToBondStateChanges(context: Context) {
         context.applicationContext.registerReceiver(
-                broadcastReceiver,
-                IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            broadcastReceiver,
+            IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         )
     }
 
@@ -108,9 +107,9 @@ object ConnectionManager {
     }
 
     fun writeCharacteristic(
-            device: BluetoothDevice,
-            characteristic: BluetoothGattCharacteristic,
-            payload: ByteArray
+        device: BluetoothDevice,
+        characteristic: BluetoothGattCharacteristic,
+        payload: ByteArray
     ) {
         val writeType = when {
             characteristic.isWritable() -> BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -140,9 +139,9 @@ object ConnectionManager {
     }
 
     fun writeDescriptor(
-            device: BluetoothDevice,
-            descriptor: BluetoothGattDescriptor,
-            payload: ByteArray
+        device: BluetoothDevice,
+        descriptor: BluetoothGattDescriptor,
+        payload: ByteArray
     ) {
         if (device.isConnected() && (descriptor.isWritable() || descriptor.isCccd())) {
             enqueueOperation(DescriptorWrite(device, descriptor.uuid, payload))
@@ -155,7 +154,7 @@ object ConnectionManager {
 
     fun enableNotifications(device: BluetoothDevice, characteristic: BluetoothGattCharacteristic) {
         if (device.isConnected() &&
-                (characteristic.isIndicatable() || characteristic.isNotifiable())
+            (characteristic.isIndicatable() || characteristic.isNotifiable())
         ) {
             enqueueOperation(EnableNotifications(device, characteristic.uuid))
         } else if (!device.isConnected()) {
@@ -167,7 +166,7 @@ object ConnectionManager {
 
     fun disableNotifications(device: BluetoothDevice, characteristic: BluetoothGattCharacteristic) {
         if (device.isConnected() &&
-                (characteristic.isIndicatable() || characteristic.isNotifiable())
+            (characteristic.isIndicatable() || characteristic.isNotifiable())
         ) {
             enqueueOperation(DisableNotifications(device, characteristic.uuid))
         } else if (!device.isConnected()) {
@@ -232,11 +231,11 @@ object ConnectionManager {
 
         // Check BluetoothGatt availability for other operations
         val gatt = deviceGattMap[operation.device]
-                ?: this@ConnectionManager.run {
-                    Timber.e("Not connected to ${operation.device.address}! Aborting $operation operation.")
-                    signalEndOfOperation()
-                    return
-                }
+            ?: this@ConnectionManager.run {
+                Timber.e("Not connected to ${operation.device.address}! Aborting $operation operation.")
+                signalEndOfOperation()
+                return
+            }
 
         // TODO: Make sure each operation ultimately leads to signalEndOfOperation()
         // TODO: Refactor this into an BleOperationType abstract or extension function
@@ -372,16 +371,50 @@ object ConnectionManager {
                     requestMtu(device, GATT_MAX_MTU_SIZE)
                     listeners.forEach { it.get()?.onConnectionSetupComplete?.invoke(this) }
 
+
                     ////my add
-        //            val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
-        //                    .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
+                    //            val characteristic2 = gatt.getService(HEART_RATE_SERVICE_UUID)
+                    //                    .getCharacteristic(HEART_RATE_MEASUREMENT_CHAR_UUID)
 
-        //            val characteristic = gatt.getService(BATTERY_SERVICE2)
-        //                    .getCharacteristic(BATTERY_LEVEL)
+                    //            val characteristic = gatt.getService(BATTERY_SERVICE2)
+                    //                    .getCharacteristic(BATTERY_LEVEL)
 
+                    /**                    val characteristic = gatt.getService(BSERVICE)
+                    .getCharacteristic(BSERVICELEVEL)
+
+                    val characteristic2 = gatt.getService(FSERVICE)
+                    .getCharacteristic(FSERVICEFIRWARE)
+                    gatt.readCharacteristic(characteristic);
+                    gatt.readCharacteristic(characteristic2);
                     //turn on/off for notifications
-                 //   enableNotifications(device, characteristic)
-               //     enableNotifications(device, characteristic2)
+                    enableNotifications(device, characteristic)
+                    // enableNotifications(device, characteristic2)
+                    val descriptor = characteristic.getDescriptor(BSERVICEDESCRIPTOR)
+                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(descriptor)
+                     */
+//myadd1
+
+
+                    // Get the counter characteristic
+                    val characteristic = gatt
+                        .getService(BSERVICE)
+                        .getCharacteristic(BSERVICELEVEL)
+
+
+                    //  gatt.setCharacteristicNotification(characteristic, true);
+
+                    val characteristic2 = gatt
+                        .getService(FSERVICE)
+                        .getCharacteristic(FSERVICEFIRWARE)
+                    //   descriptor2.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+                     //   readCharacteristic(device, characteristic)
+                    readCharacteristic(device, characteristic2)
+                    readCharacteristic(device, characteristic)
+                    // gatt.readCharacteristic(characteristic)
+                    //   gatt.readCharacteristic(characteristic2)
+
+                    //   gatt.setCharacteristicNotification(characteristic2, true);
 
                 } else {
                     Timber.e("Service discovery failed due to status $status")
@@ -404,10 +437,11 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicRead(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                status: Int
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
         ) {
+
             with(characteristic) {
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
@@ -429,10 +463,11 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicWrite(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                status: Int
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
         ) {
+            //     Thread(Runnable { gatt.writeCharacteristic(characteristic) }).start()
             with(characteristic) {
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
@@ -454,8 +489,8 @@ object ConnectionManager {
         }
 
         override fun onCharacteristicChanged(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
         ) {
             with(characteristic) {
                 Timber.i("Characteristic $uuid changed | value: ${value.toHexString()}")
@@ -463,14 +498,14 @@ object ConnectionManager {
 
             }
             ///my add
-            //characteristic.getValue()
+            //   characteristic.value
         }
 
 
         override fun onDescriptorRead(
-                gatt: BluetoothGatt,
-                descriptor: BluetoothGattDescriptor,
-                status: Int
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
         ) {
             with(descriptor) {
                 when (status) {
@@ -493,17 +528,14 @@ object ConnectionManager {
         }
 
         override fun onDescriptorWrite(
-                gatt: BluetoothGatt,
-                descriptor: BluetoothGattDescriptor,
-                status: Int
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
         ) {
             with(descriptor) {
                 ///my add
-                /**           val characteristic = gatt.getService(HEART_RATE_SERVICE_UUID)
-                .getCharacteristic(HEART_RATE_CONTROL_POINT_CHAR_UUID)
-                characteristic.value = byteArrayOf(1, 1)
-                gatt.writeCharacteristic(characteristic).toString()
-                 */
+                //  gatt.readCharacteristic(characteristic)
+
                 ///
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
@@ -525,7 +557,7 @@ object ConnectionManager {
             }
 
             if (descriptor.isCccd() &&
-                    (pendingOperation is EnableNotifications || pendingOperation is DisableNotifications)
+                (pendingOperation is EnableNotifications || pendingOperation is DisableNotifications)
             ) {
                 signalEndOfOperation()
             } else if (!descriptor.isCccd() && pendingOperation is DescriptorWrite) {
@@ -534,24 +566,24 @@ object ConnectionManager {
         }
 
         private fun onCccdWrite(
-                gatt: BluetoothGatt,
-                value: ByteArray,
-                characteristic: BluetoothGattCharacteristic
+            gatt: BluetoothGatt,
+            value: ByteArray,
+            characteristic: BluetoothGattCharacteristic
         ) {
             val charUuid = characteristic.uuid
             val notificationsEnabled =
-                    value.contentEquals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) ||
-                            value.contentEquals(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
+                value.contentEquals(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE) ||
+                        value.contentEquals(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)
             val notificationsDisabled =
-                    value.contentEquals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                value.contentEquals(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
 
             when {
                 notificationsEnabled -> {
                     Timber.w("Notifications or indications ENABLED on $charUuid")
                     listeners.forEach {
                         it.get()?.onNotificationsEnabled?.invoke(
-                                gatt.device,
-                                characteristic
+                            gatt.device,
+                            characteristic
                         )
                     }
                 }
@@ -559,8 +591,8 @@ object ConnectionManager {
                     Timber.w("Notifications or indications DISABLED on $charUuid")
                     listeners.forEach {
                         it.get()?.onNotificationsDisabled?.invoke(
-                                gatt.device,
-                                characteristic
+                            gatt.device,
+                            characteristic
                         )
                     }
                 }
@@ -570,6 +602,7 @@ object ConnectionManager {
             }
         }
     }
+    ///
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -611,6 +644,12 @@ object ConnectionManager {
     var HEART_RATE_MEASUREMENT_CHAR_UUID = convertFromInteger(0x2A37)
     var UUID_HEART_RATE_MEASUREMENT = convertFromInteger(0x2A37)
 
+    var FSERVICE = ConnectionManager.convertFromInteger(0x180A)
+    var FSERVICEFIRWARE = ConnectionManager.convertFromInteger(0x2A26)
+    var BSERVICE = ConnectionManager.convertFromInteger(0x180F)
+    var BSERVICELEVEL = ConnectionManager.convertFromInteger(0x2A19)
+    var BSERVICEDESCRIPTOR = ConnectionManager.convertFromInteger(0x2902)
+    var CONFIG_DESCRIPTOR = ConnectionManager.convertFromInteger(0x2902)
     /**  private fun broadcastUpdate(action: String) {
     val intent = Intent(action)
     sendBroadcast(intent)
@@ -653,5 +692,7 @@ object ConnectionManager {
     sendBroadcast(intent)
     }
      */
+
 }
+
 

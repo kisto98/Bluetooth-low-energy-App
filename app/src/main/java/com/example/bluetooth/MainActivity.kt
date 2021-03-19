@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.bluetooth.ConnectionManager.connect
+
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_main.*
@@ -289,8 +290,7 @@ class MainActivity : AppCompatActivity() {
                         connectedDeviceMap!!.put(deviceAddress, gatt)
                     }
                     // Broadcast if needed
-                    Log.i("asd", "Attempting to start service discovery:" +
-                            gatt.discoverServices());
+                    Log.i("asd", "Attempting to start service discovery:" + gatt.discoverServices());
                     conbledev?.add(1, bluetoothDevice)
                     conDevAdapter.notifyItemInserted(-1)
                     conDevAdapter.notifyDataSetChanged()
@@ -329,15 +329,16 @@ class MainActivity : AppCompatActivity() {
                     gatt.close()
                 }
             } else {
-                Log.w("BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
-          //      conbledev?.remove(bluetoothDevice)
-            //    conDevAdapter.notifyItemRemoved(-1)
-              //  conDevAdapter.notifyDataSetChanged()
+                Log.w(
+                    "BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                //      conbledev?.remove(bluetoothDevice)
+                //    conDevAdapter.notifyItemRemoved(-1)
+                //  conDevAdapter.notifyDataSetChanged()
 
                 gatt.close()
             }
-        }
 
+        }
     }
 
     //navmenu

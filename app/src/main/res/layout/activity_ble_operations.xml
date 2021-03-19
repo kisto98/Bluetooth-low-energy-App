@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
-            android:text="Heart sensor rate"
+            android:text="Device firmware: "
             android:textColor="@color/white"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
@@ -128,7 +128,9 @@
             app:layout_constraintTop_toBottomOf="@+id/btnchose" />
 
 
+
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 
 
     <com.google.android.material.navigation.NavigationView

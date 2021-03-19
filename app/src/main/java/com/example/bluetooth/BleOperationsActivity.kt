@@ -13,11 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Copyright 2019 Punch Through Design LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.example.bluetooth
 
 
 import android.app.Activity
+import android.app.Dialog
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothProfile
@@ -26,6 +42,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -34,7 +51,8 @@ import android.widget.EditText
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.bluetooth.ConnectionManager.UUID_HEART_RATE_MEASUREMENT
+import com.example.bluetooth.ConnectionManager.BSERVICELEVEL
+import com.example.bluetooth.ConnectionManager.FSERVICEFIRWARE
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_ble_operations.*
 import kotlinx.android.synthetic.main.nav_header.*
@@ -42,9 +60,12 @@ import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
+import org.apache.commons.codec.DecoderException
+import org.apache.commons.codec.binary.Hex
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
 import org.jetbrains.anko.toast
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -89,7 +110,6 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             false
         }
-        Log.w("selected", "s$bottomNavigationView.selectedItemId")
     }
 
     //navmenu
@@ -160,13 +180,11 @@ class BleOperationsActivity : AppCompatActivity() {
             overridePendingTransition(0, 0)
         }
         overridePendingTransition(0, 0)
-
-
     }
+
 
     private val connectionEventListener by lazy {
         ConnectionEventListener().apply {
-
             onDisconnect = {
                 runOnUiThread {
                     alert {
@@ -178,9 +196,32 @@ class BleOperationsActivity : AppCompatActivity() {
             }
 
             onCharacteristicRead = { _, characteristic ->
+                when (characteristic.uuid) {
+                    FSERVICEFIRWARE -> {
 
+                        val heartRate = characteristic.getStringValue(0)
+                        hsrate.text = "Device firmware:  " + heartRate.toString()
+
+                    }
+                    BSERVICELEVEL -> {
+                        val flag = characteristic.properties
+                        val format = when (flag and 0x01) {
+                            0x01 -> {
+                                Log.d("TAG", "Battery level format UINT16.")
+                                BluetoothGattCharacteristic.FORMAT_UINT16
+                            }
+                            else -> {
+                                Log.d("TAG", "Battery level format UINT8.")
+                                BluetoothGattCharacteristic.FORMAT_UINT8
+                            }
+                        }
+                        val batteryRate = characteristic.getIntValue(format, 0)
+                        Log.d("TAG", String.format("Recived battery level rate: %d", batteryRate))
+                        btlvl.text = "Battery level  " + batteryRate.toString() + "%"
+
+                    }
+                }
             }
-
             onCharacteristicWrite = { _, characteristic ->
 
             }
@@ -190,10 +231,8 @@ class BleOperationsActivity : AppCompatActivity() {
             }
 
             onCharacteristicChanged = { _, characteristic ->
-                ////my add
-
                 when (characteristic.uuid) {
-                    ConnectionManager.BATTERY_SERVICE -> {
+                    BSERVICELEVEL -> {
                         val flag = characteristic.properties
                         val format = when (flag and 0x01) {
                             0x01 -> {
@@ -209,37 +248,20 @@ class BleOperationsActivity : AppCompatActivity() {
                         Log.d("TAG", String.format("Recived battery level rate: %d", batteryRate))
                         btlvl.text = "Battery level  " + batteryRate.toString()
                     }
-                    UUID_HEART_RATE_MEASUREMENT -> {
-                        val flag = characteristic.properties
-                        Log.d("TAG", "Heart rate flag: $flag")
-                        var format = -1
-                        // Heart rate bit number format
-                        if (flag and 0x01 != 0) {
-                            format = BluetoothGattCharacteristic.FORMAT_UINT16
-                            Log.d("TAG", "Heart rate format UINT16.")
-
-                        } else {
-                            format = BluetoothGattCharacteristic.FORMAT_UINT8
-                            Log.d("TAG", "Heart rate format UINT8.")
-                        }
-                        val heartRate = characteristic.getIntValue(format, 1)
-                        Log.w("TAG", String.format("Received heart rate: %d", heartRate))
-                        heartRate.toDouble()
-                        hsrate.text = "Heart rate sensor  " + heartRate.toString()
-                        devicename.text = "Device name: " + device.name
-                        ///
+                    FSERVICEFIRWARE -> {
+                        val heartRate = characteristic.getStringValue(0)
+                        hsrate.text = "Device firmware:  " + heartRate.toString()
                     }
                 }
+            }
+            onNotificationsEnabled = { _, characteristic ->
 
-                onNotificationsEnabled = { _, characteristic ->
+                notifyingCharacteristics.add(characteristic.uuid)
+            }
 
-                    notifyingCharacteristics.add(characteristic.uuid)
-                }
+            onNotificationsDisabled = { _, characteristic ->
 
-                onNotificationsDisabled = { _, characteristic ->
-
-                    notifyingCharacteristics.remove(characteristic.uuid)
-                }
+                notifyingCharacteristics.remove(characteristic.uuid)
             }
         }
     }
@@ -281,7 +303,7 @@ class BleOperationsActivity : AppCompatActivity() {
     private fun String.hexToBytes() =
         this.chunked(2).map { it.toUpperCase(Locale.US).toInt(16).toByte() }.toByteArray()
 
-///
+    ///
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
@@ -309,7 +331,8 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             true
         }
-    Log.w("ActivityState", "onCreateBle")
+
+        Log.w("ActivityState", "onCreateBle")
     }
 
     override fun onStart() {
@@ -352,10 +375,10 @@ class BleOperationsActivity : AppCompatActivity() {
         Log.w("ActivityState", "onStopBle")
     }
 
+
     //Adding dfu
     fun update_dfu() {
         btnchose.setOnClickListener {
-
             val intent = Intent()
                 .setType("*/*")
                 .setAction(Intent.ACTION_GET_CONTENT)
@@ -363,7 +386,14 @@ class BleOperationsActivity : AppCompatActivity() {
             val selectedFile = intent.getParcelableExtra<Uri>("path")
         }
         otaStartButton.setOnClickListener {
+            ConnectionManager.unregisterListener(connectionEventListener)
+            ///
+            //     var builder: AlertDialog.Builder = AlertDialog.Builder(this@BleOperationsActivity)
 
+            //   builder.setCancelable(false) // if you want user to wait for some process to finish,
+            // builder.setView(R.layout.custom_dialog)
+            //  val dialog = builder.create()
+            ///
             val file = intent.getParcelableExtra<Uri>("path")
             if (file !== null) {
                 val file1 = file.path
@@ -380,21 +410,53 @@ class BleOperationsActivity : AppCompatActivity() {
 
                 // starter.start(this, DfuService::class.java)
                 DfuServiceInitiator.createDfuNotificationChannel(this);
-                val controller: DfuServiceController = starter.start(this, DfuService::class.java)
+                val controller: DfuServiceController =
+                    starter.start(this, DfuService::class.java)
                 Log.w("start", "$starter")
                 Log.w("files", "$file1")
-
+                //
+                // var dialog = ProgressDialog.progressDialog(this@BleOperationsActivity)
+                // dialog.show()
+                startProgress()
             }
         }
     }
 
+    private var progressDialog: Dialog? = null
+    fun startProgress() {
+        val factory = LayoutInflater.from(this)
+        val dialogView: View = factory.inflate(R.layout.custom_dialog, null)
+        progressDialog = Dialog(this)
+        progressDialog!!.setCancelable(false)
+        progressDialog!!.setContentView(dialogView)
+        progressDialog!!.show()
+
+    }
+
+    fun stopProgress() {
+        progressDialog!!.dismiss()
+    }
+
+    //
     private val mDfuProgressListener = object : DfuProgressListenerAdapter() {
         override fun onDfuCompleted(deviceAddress: String) {
             toast("Update done")
-        }
+            stopProgress()
+            val intent = Intent(this@BleOperationsActivity, MainActivity::class.java)
+            startActivity(intent)
 
-        override fun onError(deviceAddress: String, error: Int, errorType: Int, message: String?) {
+        }
+        override fun onError(
+            deviceAddress: String,
+            error: Int,
+            errorType: Int,
+            message: String?
+        ) {
             toast("Error happened try again")
+            stopProgress()
+            val intent = Intent(this@BleOperationsActivity, MainActivity::class.java)
+            startActivity(intent)
+
         }
 
         override fun onDfuProcessStarted(deviceAddress: String) {
@@ -413,9 +475,13 @@ class BleOperationsActivity : AppCompatActivity() {
             //   finish()
 
             Log.w("file1", "$$path")
+
         }
     }
-}
+    /////
+
+    }
+
 
 
 
