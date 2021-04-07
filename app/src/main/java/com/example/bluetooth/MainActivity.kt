@@ -86,8 +86,8 @@ class MainActivity : AppCompatActivity() {
                 isCancelable = false
                 positiveButton(android.R.string.ok) {
                     requestPermission(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            LOCATION_PERMISSION_REQUEST_CODE
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        LOCATION_PERMISSION_REQUEST_CODE
                     )
                 }
             }.show()
@@ -96,9 +96,9 @@ class MainActivity : AppCompatActivity() {
 
     //
     override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -146,8 +146,8 @@ class MainActivity : AppCompatActivity() {
     val device_name = "ExtremeMotion"
 
     private val scanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .build()
+        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        .build()
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -179,9 +179,9 @@ class MainActivity : AppCompatActivity() {
         scan_results_recycler_view.apply {
             adapter = scanResultAdapter
             layoutManager = LinearLayoutManager(
-                    this@MainActivity,
-                    RecyclerView.VERTICAL,
-                    false
+                this@MainActivity,
+                RecyclerView.VERTICAL,
+                false
             )
             isNestedScrollingEnabled = false
         }
@@ -194,7 +194,11 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private val conbledev: MutableList<BluetoothDevice>? by lazy { bluetoothManager.getConnectedDevices(BluetoothProfile.GATT) }
+    private val conbledev: MutableList<BluetoothDevice>? by lazy {
+        bluetoothManager.getConnectedDevices(
+            BluetoothProfile.GATT
+        )
+    }
 
     private val conDevAdapter: ConDevAdapter by lazy {
         ConDevAdapter(conbledev) { bluetoothDevice ->
@@ -232,8 +236,6 @@ class MainActivity : AppCompatActivity() {
             with(result.device) {
                 Timber.w("Connecting to $address")
                 connect(this, this@MainActivity)
-
-
             }
         }
 
@@ -249,12 +251,12 @@ class MainActivity : AppCompatActivity() {
                 Intent(this@MainActivity, BleOperationsActivity::class.java).also {
                     it.putExtra(BluetoothDevice.EXTRA_DEVICE, gatt.device)
                     startActivity(it)
-      //now added
-                  // this add for now  conbledev?.add(gatt.device)
-               //     conDevAdapter.notifyItemInserted(-1)
-             //       conDevAdapter.notifyDataSetChanged()
+                    //now added
+                    // this add for now  conbledev?.add(gatt.device)
+                    //     conDevAdapter.notifyItemInserted(-1)
+                    //       conDevAdapter.notifyDataSetChanged()
                 }
-             //   conbledev?.add(gatt.device)
+                //   conbledev?.add(gatt.device)
                 overridePendingTransition(0, 0)
                 ConnectionManager.unregisterListener(this)
 
@@ -268,8 +270,8 @@ class MainActivity : AppCompatActivity() {
                 positiveButton("OK") {}
                 }.show()
                 } */
-          //      conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
-            //    conDevAdapter.notifyDataSetChanged()
+                //      conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
+                //    conDevAdapter.notifyDataSetChanged()
 
 
             }
@@ -290,7 +292,10 @@ class MainActivity : AppCompatActivity() {
                         connectedDeviceMap!!.put(deviceAddress, gatt)
                     }
                     // Broadcast if needed
-                    Log.i("asd", "Attempting to start service discovery:" + gatt.discoverServices());
+                    Log.i(
+                        "asd",
+                        "Attempting to start service discovery:" + gatt.discoverServices()
+                    );
                     conbledev?.add(1, bluetoothDevice)
                     conDevAdapter.notifyItemInserted(-1)
                     conDevAdapter.notifyDataSetChanged()
@@ -323,14 +328,16 @@ class MainActivity : AppCompatActivity() {
                     conbledev?.remove(conbledev?.get(conDevAdapter.mSelectedItem))
                     conDevAdapter.notifyItemRemoved(conDevAdapter.mSelectedItem)
                     conDevAdapter.notifyDataSetChanged()
-                 //   ConnectionManager.unregisterListener(connectionEventListener)
+                    //   ConnectionManager.unregisterListener(connectionEventListener)
 
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt.close()
                 }
             } else {
                 Log.w(
-                    "BluetoothGattCallback", "Error $status encountered for $deviceAddress! Disconnecting...")
+                    "BluetoothGattCallback",
+                    "Error $status encountered for $deviceAddress! Disconnecting..."
+                )
                 //      conbledev?.remove(bluetoothDevice)
                 //    conDevAdapter.notifyItemRemoved(-1)
                 //  conDevAdapter.notifyDataSetChanged()
@@ -399,8 +406,7 @@ class MainActivity : AppCompatActivity() {
 
                         }
 
-                    }
-                    else {
+                    } else {
                         toast("Not connected to any device")
                     }
                 }
@@ -418,6 +424,7 @@ class MainActivity : AppCompatActivity() {
         }
         Log.w("ActivityState", "onCreateMain")
     }
+
     override fun onStart() {
         super.onStart()
         Log.w("ActivityState", "onStartMain")
@@ -429,6 +436,7 @@ class MainActivity : AppCompatActivity() {
 
         Log.w("ActivityState", "onRestartMain")
     }
+
     override fun onResume() {
         Log.w("devices", "$conbledev")
         //   setUpBottombar()
@@ -440,10 +448,12 @@ class MainActivity : AppCompatActivity() {
         Log.w("ActivityState", "onResumeMain")
         super.onResume()
     }
+
     override fun onPause() {
         super.onPause()
         Log.w("ActivityState", "onPauseMain")
     }
+
     override fun onStop() {
         super.onStop()
         Log.w("ActivityState", "onStopMain")
@@ -451,7 +461,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-      //  ConnectionManager.unregisterListener(connectionEventListener)
+        //  ConnectionManager.unregisterListener(connectionEventListener)
         Log.w("ActivityState", "onDestroyMain")
     }
 

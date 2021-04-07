@@ -34,9 +34,7 @@ package com.example.bluetooth
 
 import android.app.Activity
 import android.app.Dialog
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothProfile
+import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -53,6 +51,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bluetooth.ConnectionManager.BSERVICELEVEL
 import com.example.bluetooth.ConnectionManager.FSERVICEFIRWARE
+import com.example.bluetooth.ConnectionManager.enableNotifications
+import com.example.bluetooth.ConnectionManager.readCharacteristic
+import com.example.bluetooth.ConnectionManager.writeCharacteristic
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_ble_operations.*
 import kotlinx.android.synthetic.main.nav_header.*
@@ -60,12 +61,9 @@ import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 import no.nordicsemi.android.dfu.DfuServiceController
 import no.nordicsemi.android.dfu.DfuServiceInitiator
 import no.nordicsemi.android.dfu.DfuServiceListenerHelper
-import org.apache.commons.codec.DecoderException
-import org.apache.commons.codec.binary.Hex
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
 import org.jetbrains.anko.toast
-import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -331,7 +329,8 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             true
         }
-
+        //added
+        device.connectGatt(this,false, callback)
         Log.w("ActivityState", "onCreateBle")
     }
 
@@ -339,6 +338,8 @@ class BleOperationsActivity : AppCompatActivity() {
         overridePendingTransition(0, 0)
         super.onStart()
         update_dfu()
+        // firstcommand(gatt)
+        wbutt
         Log.w("ActivityState", "onStartBle")
     }
 
@@ -377,7 +378,7 @@ class BleOperationsActivity : AppCompatActivity() {
 
 
     //Adding dfu
-    fun update_dfu() {
+    private fun update_dfu() {
         btnchose.setOnClickListener {
             val intent = Intent()
                 .setType("*/*")
@@ -387,13 +388,7 @@ class BleOperationsActivity : AppCompatActivity() {
         }
         otaStartButton.setOnClickListener {
             ConnectionManager.unregisterListener(connectionEventListener)
-            ///
-            //     var builder: AlertDialog.Builder = AlertDialog.Builder(this@BleOperationsActivity)
 
-            //   builder.setCancelable(false) // if you want user to wait for some process to finish,
-            // builder.setView(R.layout.custom_dialog)
-            //  val dialog = builder.create()
-            ///
             val file = intent.getParcelableExtra<Uri>("path")
             if (file !== null) {
                 val file1 = file.path
@@ -444,8 +439,8 @@ class BleOperationsActivity : AppCompatActivity() {
             stopProgress()
             val intent = Intent(this@BleOperationsActivity, MainActivity::class.java)
             startActivity(intent)
-
         }
+
         override fun onError(
             deviceAddress: String,
             error: Int,
@@ -479,8 +474,48 @@ class BleOperationsActivity : AppCompatActivity() {
         }
     }
     /////
+    fun firstcommand(gatt: BluetoothGatt) {
+        wbutt.setOnClickListener {
+            //write characteristic
+            val dd = UUID.fromString("adc0ca01-e16b-45c9-8980-3fe6300d5ded")
+            //service
+            val aa: UUID = UUID.fromString("adc0cab0-e16b-45c9-8980-3fe6300d5ded")
 
+            val characteristic = gatt.getService(aa).getCharacteristic(dd)
+
+            val starsession = "3300"
+            val startSession:ByteArray = starsession.toByteArray()
+
+            ///
+            val bb= UUID.fromString("adc0ca02-e16b-45c9-8980-3fe6300d5ded")
+            val cha3 = gatt.getService(aa).getCharacteristic(bb)
+         //   ConnectionManager.enableNotifications(device, cha3)
+
+            val cc= UUID.fromString("adc0ca03-e16b-45c9-8980-3fe6300d5ded")
+            val cha4 = gatt.getService(aa).getCharacteristic(cc)
+        //    ConnectionManager.enableNotifications(device, cha4)
+            ///
+          //  enableNotifications(device,cha3)
+          //  enableNotifications(device,cha4)
+           val input = inputtext.text.toString().toByteArray()
+            writeCharacteristic(device,characteristic, input)
+            inputtext.setText("")
+
+        }
     }
+
+    private val callback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    gatt.discoverServices()
+                firstcommand(gatt)
+                }
+            }
+        }
+    }
+}
 
 
 

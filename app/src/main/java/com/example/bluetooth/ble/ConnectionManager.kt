@@ -25,7 +25,6 @@ import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import com.example.bluetooth.ble.*
-import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.*
@@ -339,7 +338,7 @@ object ConnectionManager {
         }
     }
 
-    private val callback = object : BluetoothGattCallback() {
+     val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
 
@@ -414,7 +413,18 @@ object ConnectionManager {
                     // gatt.readCharacteristic(characteristic)
                     //   gatt.readCharacteristic(characteristic2)
 
+                    /// added later
+
                     //   gatt.setCharacteristicNotification(characteristic2, true);
+                   val aa:UUID= UUID.fromString("adc0cab0-e16b-45c9-8980-3fe6300d5ded")
+                    val bb= UUID.fromString("adc0ca02-e16b-45c9-8980-3fe6300d5ded")
+                    val cha3 = gatt.getService(aa).getCharacteristic(bb)
+                    enableNotifications(device, cha3)
+
+                    val cc= UUID.fromString("adc0ca03-e16b-45c9-8980-3fe6300d5ded")
+                    val cha4 = gatt.getService(aa).getCharacteristic(cc)
+                    enableNotifications(device, cha4)
+
 
                 } else {
                     Timber.e("Service discovery failed due to status $status")
