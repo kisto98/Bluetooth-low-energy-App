@@ -90,7 +90,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="158dp"
             android:layout_marginEnd="158dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="16dp"
             android:text="Disconnect"
             app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
             app:layout_constraintEnd_toEndOf="parent"
@@ -131,9 +131,10 @@
             android:id="@+id/wbutt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="83dp"
+            android:layout_marginTop="80dp"
             android:text="Writte"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.463"
             app:layout_constraintStart_toEndOf="@+id/inputtext"
             app:layout_constraintTop_toBottomOf="@+id/otaStartButton" />
 
@@ -142,12 +143,39 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="16dp"
             android:ems="10"
+            android:hint="Enter command..."
             android:inputType="textPersonName"
             android:textColor="@color/white"
+            android:textColorHint="#B3FFFFFF"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/pathsomthing" />
+
+        <EditText
+            android:id="@+id/inputtext2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="65dp"
+            android:capitalize="characters"
+            android:ems="10"
+            android:hint="Enter path..."
+            android:inputType="textPersonName"
+            android:textColor="@color/white"
+            android:textColorHint="#B3FFFFFF"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/pathsomthing" />
+
+        <Button
+            android:id="@+id/fmanager"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="24dp"
+            android:text="FM"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/inputtext2" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

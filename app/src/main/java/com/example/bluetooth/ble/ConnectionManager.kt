@@ -39,7 +39,7 @@ private const val GATT_MAX_MTU_SIZE = 517
 
 object ConnectionManager {
 
-    private var listeners: MutableSet<WeakReference<ConnectionEventListener>> = mutableSetOf()
+   private var listeners: MutableSet<WeakReference<ConnectionEventListener>> = mutableSetOf()
 
     private val deviceGattMap = ConcurrentHashMap<BluetoothDevice, BluetoothGatt>()
     private val operationQueue = ConcurrentLinkedQueue<BleOperationType>()
@@ -338,7 +338,7 @@ object ConnectionManager {
         }
     }
 
-     val callback = object : BluetoothGattCallback() {
+     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             val deviceAddress = gatt.device.address
 

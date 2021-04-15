@@ -35,10 +35,13 @@ package com.example.bluetooth
 import android.app.Activity
 import android.app.Dialog
 import android.bluetooth.*
+import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -49,13 +52,18 @@ import android.widget.EditText
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.bluetooth.ConnectionManager.BSERVICELEVEL
 import com.example.bluetooth.ConnectionManager.FSERVICEFIRWARE
 import com.example.bluetooth.ConnectionManager.enableNotifications
 import com.example.bluetooth.ConnectionManager.readCharacteristic
 import com.example.bluetooth.ConnectionManager.writeCharacteristic
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.punchthrough.blestarterappandroid.ScanResultAdapter
 import kotlinx.android.synthetic.main.activity_ble_operations.*
+import kotlinx.android.synthetic.main.activity_ble_operations.drawerLayout
+import kotlinx.android.synthetic.main.activity_ble_operations.navView
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.nav_header.*
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 import no.nordicsemi.android.dfu.DfuServiceController
@@ -64,6 +72,7 @@ import no.nordicsemi.android.dfu.DfuServiceListenerHelper
 import org.jetbrains.anko.alert
 import org.jetbrains.anko.bluetoothManager
 import org.jetbrains.anko.toast
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -77,6 +86,7 @@ class BleOperationsActivity : AppCompatActivity() {
             service.characteristics ?: listOf()
         } ?: listOf()
     }
+    val number: UUID = UUID.fromString("adc0ca03-e16b-45c9-8980-3fe6300d5ded")
 
     private var notifyingCharacteristics = mutableListOf<UUID>()
 
@@ -192,13 +202,14 @@ class BleOperationsActivity : AppCompatActivity() {
                     }.show()
                 }
             }
-
             onCharacteristicRead = { _, characteristic ->
                 when (characteristic.uuid) {
                     FSERVICEFIRWARE -> {
 
                         val heartRate = characteristic.getStringValue(0)
-                        hsrate.text = "Device firmware:  " + heartRate.toString()
+                        Handler(Looper.getMainLooper()).post(Runnable {
+                            hsrate.text = "Device firmware:  " + heartRate.toString()
+                        })
 
                     }
                     BSERVICELEVEL -> {
@@ -246,9 +257,21 @@ class BleOperationsActivity : AppCompatActivity() {
                         Log.d("TAG", String.format("Recived battery level rate: %d", batteryRate))
                         btlvl.text = "Battery level  " + batteryRate.toString()
                     }
-                    FSERVICEFIRWARE -> {
-                        val heartRate = characteristic.getStringValue(0)
-                        hsrate.text = "Device firmware:  " + heartRate.toString()
+                    number->{
+                        val flag = characteristic.properties
+                        val format = when (flag and 0x01) {
+                            0x01 -> {
+                                Log.d("TAG", "Number format UINT16.")
+                                BluetoothGattCharacteristic.FORMAT_UINT16
+                            }
+                            else -> {
+                                Log.d("TAG", "Number format UINT8.")
+                                BluetoothGattCharacteristic.FORMAT_UINT8
+                            }
+                        }
+                        val batteryRate = characteristic.getIntValue(format, 0)
+                        Log.d("TAG", String.format("Number: %d", batteryRate))
+                        //pathsomthing.text = "Number of " + batteryRate.toString()
                     }
                 }
             }
@@ -329,8 +352,14 @@ class BleOperationsActivity : AppCompatActivity() {
             }
             true
         }
+       fmanager.setOnClickListener {  Intent(this@BleOperationsActivity, FileManager::class.java).also {
+           it.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+           startActivity(it)
+            }
+       }
         //added
-        device.connectGatt(this,false, callback)
+        device.connectGatt(this, false, callback)
+
         Log.w("ActivityState", "onCreateBle")
     }
 
@@ -338,8 +367,6 @@ class BleOperationsActivity : AppCompatActivity() {
         overridePendingTransition(0, 0)
         super.onStart()
         update_dfu()
-        // firstcommand(gatt)
-        wbutt
         Log.w("ActivityState", "onStartBle")
     }
 
@@ -366,12 +393,14 @@ class BleOperationsActivity : AppCompatActivity() {
 
     override fun onPause() {
         overridePendingTransition(0, 0)
+        ConnectionManager.unregisterListener(connectionEventListener)
         super.onPause()
         Log.w("ActivityState", "onPauseBle")
     }
 
     override fun onStop() {
         overridePendingTransition(0, 0)
+
         super.onStop()
         Log.w("ActivityState", "onStopBle")
     }
@@ -473,6 +502,7 @@ class BleOperationsActivity : AppCompatActivity() {
 
         }
     }
+
     /////
     fun firstcommand(gatt: BluetoothGatt) {
         wbutt.setOnClickListener {
@@ -483,36 +513,75 @@ class BleOperationsActivity : AppCompatActivity() {
 
             val characteristic = gatt.getService(aa).getCharacteristic(dd)
 
-            val starsession = "3300"
-            val startSession:ByteArray = starsession.toByteArray()
-
-            ///
-            val bb= UUID.fromString("adc0ca02-e16b-45c9-8980-3fe6300d5ded")
+            val bb = UUID.fromString("adc0ca02-e16b-45c9-8980-3fe6300d5ded")
             val cha3 = gatt.getService(aa).getCharacteristic(bb)
-         //   ConnectionManager.enableNotifications(device, cha3)
 
-            val cc= UUID.fromString("adc0ca03-e16b-45c9-8980-3fe6300d5ded")
+            val cc = UUID.fromString("adc0ca03-e16b-45c9-8980-3fe6300d5ded")
             val cha4 = gatt.getService(aa).getCharacteristic(cc)
-        //    ConnectionManager.enableNotifications(device, cha4)
-            ///
-          //  enableNotifications(device,cha3)
-          //  enableNotifications(device,cha4)
-           val input = inputtext.text.toString().toByteArray()
-            writeCharacteristic(device,characteristic, input)
-            inputtext.setText("")
 
+            Log.i("*** CMD ", inputtext.text.toString())
+            Log.i("*** PATH ", inputtext2.text.toString())
+
+            var cmd = 0x00.toByte()
+            when (inputtext.text.toString()) {
+                "33" -> {
+                    cmd = 0x33.toByte()
+                }
+                "99" -> {
+                    cmd = 0x99.toByte()
+                }
+                "A1" -> {
+                    cmd = 0xA1.toByte()
+                }
+                "A2" -> {
+                    cmd = 0xA2.toByte()
+                }
+            }
+
+            if (cmd != 0x00.toByte()) {
+                val path = inputtext2.text.toString().toByteArray()
+                val endCmd = 0x00.toByte()
+                if (path.isEmpty()) {
+                    Log.i("ble cmd", arrayOf(cmd, endCmd).toByteArray().toString())
+                    writeCharacteristic(device, characteristic, arrayOf(cmd, endCmd).toByteArray())
+                } else {
+                    Log.i(
+                        "ble cmd",
+                        (arrayOf(cmd).toByteArray() + path + arrayOf(endCmd).toByteArray()).toString()
+                    )
+                    writeCharacteristic(
+                        device,
+                        characteristic,
+                        arrayOf(cmd).toByteArray() + path + arrayOf(endCmd).toByteArray()
+                    )
+                }
+            } else {
+                val noCommand = 0x00.toByte()
+                Log.i("ble cmd", arrayOf(noCommand).toByteArray().toString())
+                writeCharacteristic(device, characteristic, arrayOf(noCommand).toByteArray())
+
+            }
+            //   inputtext.setText("")
+            //   inputtext2.setText("")
         }
     }
-
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     gatt.discoverServices()
-                firstcommand(gatt)
+                    firstcommand(gatt)
                 }
             }
+         else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            Log.w("BluetoothGattCallback", "Successfully disconnected from ")
+            gatt.close()
+        }
+     else {
+        Log.w("BluetoothGattCallback", "Error $status encountered for ! Disconnecting...")
+        gatt.close()
+    }
         }
     }
 }
